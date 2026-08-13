@@ -8,15 +8,15 @@ export default function App() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
 
-  void categories;
-  void setCategories;
-
   async function handleCheck() {
     setState("loading");
+    setCategories([]);
     setErrorMessage("");
 
     try {
-      await checkSystem();
+      const result = await checkSystem();
+
+      setCategories(result.categories);
       setState("success");
     } catch (error) {
       setState("error");
@@ -48,6 +48,14 @@ export default function App() {
           <p>
             System Status: <strong className="text-success">Online</strong>
           </p>
+
+          <h2 className="h5">Supported Request Categories:</h2>
+
+          <ol>
+            {categories.map((category) => (
+              <li key={category.id}>{category.name}</li>
+            ))}
+          </ol>
         </div>
       )}
 
@@ -56,6 +64,7 @@ export default function App() {
           <p>
             System Status: <strong className="text-danger">Offline</strong>
           </p>
+
           <p className="text-danger">{errorMessage}</p>
         </div>
       )}
