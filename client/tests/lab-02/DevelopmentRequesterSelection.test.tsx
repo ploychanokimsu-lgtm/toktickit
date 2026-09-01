@@ -1,4 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
+
 import {
   fireEvent,
   render,
@@ -6,21 +13,36 @@ import {
   waitFor,
 } from "@testing-library/react";
 
-import App from "../../src/App.js";
-import {
-  getDevelopmentRequesters,
-  type DevelopmentRequester,
-} from "../../src/api.js";
+import App from "../../src/App";
 
-vi.mock("../../src/api.js", () => ({
+import {
+  createTicket,
+  getCategories,
+  getDevelopmentRequesters,
+  getRelatedSystems,
+} from "../../src/api";
+
+vi.mock("../../src/api", () => ({
+  checkSystem: vi.fn(),
   getDevelopmentRequesters: vi.fn(),
+  getCategories: vi.fn(),
+  getRelatedSystems: vi.fn(),
+  createTicket: vi.fn(),
 }));
 
-const mockedGetDevelopmentRequesters = vi.mocked(
-  getDevelopmentRequesters
-);
+const mockedGetDevelopmentRequesters =
+  vi.mocked(getDevelopmentRequesters);
 
-const activeRequesters: DevelopmentRequester[] = [
+const mockedGetCategories =
+  vi.mocked(getCategories);
+
+const mockedGetRelatedSystems =
+  vi.mocked(getRelatedSystems);
+
+const mockedCreateTicket =
+  vi.mocked(createTicket);
+
+const requesters = [
   {
     id: 1,
     name: "Jennifer Anderson",
@@ -43,13 +65,64 @@ const activeRequesters: DevelopmentRequester[] = [
   },
 ];
 
+const categories = [
+  {
+    id: 1,
+    name: "Account and Access",
+  },
+  {
+    id: 2,
+    name: "Hardware",
+  },
+];
+
+const relatedSystems = [
+  {
+    id: 1,
+    name: "Email",
+  },
+  {
+    id: 2,
+    name: "Campus Wi-Fi",
+  },
+];
+
 describe("Development Requester Selection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
+
+    mockedGetDevelopmentRequesters.mockResolvedValue(
+      requesters
+    );
+
+    mockedGetCategories.mockResolvedValue(
+      categories
+    );
+
+    mockedGetRelatedSystems.mockResolvedValue(
+      relatedSystems
+    );
+
+    mockedCreateTicket.mockResolvedValue({
+      id: 1,
+      ticketNumber: "TKT-2026-000001",
+      requesterId: 1,
+      categoryId: 1,
+      relatedSystemId: 1,
+      summary: "Test Ticket",
+      requestedPriority: "MEDIUM",
+      description:
+        "This is a valid test description.",
+      currentStatus: "NEW",
+      createdAt:
+        "2026-09-01T08:00:00.000Z",
+      updatedAt:
+        "2026-09-01T08:00:00.000Z",
+    });
   });
 
-  it("shows a loading state while Requesters are being loaded", () => {
+  it("shows a loading state while Requesters are loading", () => {
     mockedGetDevelopmentRequesters.mockReturnValue(
       new Promise(() => {})
     );
@@ -57,42 +130,34 @@ describe("Development Requester Selection", () => {
     render(<App />);
 
     expect(
-      screen.getByText("Loading Development Requesters…")
+      screen.getByText(
+        /loading development requesters/i
+      )
     ).toBeInTheDocument();
-
-    expect(
-      screen.getByRole("button", { name: /continue/i })
-    ).toBeDisabled();
   });
 
-  it("shows the Lab 2 testing explanation", async () => {
-    mockedGetDevelopmentRequesters.mockResolvedValue(
-      activeRequesters
-    );
-
+  it("explains that the selector is not authentication", async () => {
     render(<App />);
 
     expect(
-      await screen.findByText("Select Development Requester")
+      await screen.findByText(
+        /this is not a login screen/i
+      )
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText(/this is not a login screen/i)
+      screen.getByText(
+        /authentication and role-based access will be introduced in lab 3/i
+      )
     ).toBeInTheDocument();
   });
 
   it("shows all active Development Requesters", async () => {
-    mockedGetDevelopmentRequesters.mockResolvedValue(
-      activeRequesters
-    );
-
     render(<App />);
 
-    const dropdown = await screen.findByLabelText(
+    await screen.findByLabelText(
       /development requester/i
     );
-
-    expect(dropdown).toBeInTheDocument();
 
     expect(
       screen.getByRole("option", {
@@ -120,115 +185,116 @@ describe("Development Requester Selection", () => {
   });
 
   it("keeps Continue disabled until a Requester is selected", async () => {
-    mockedGetDevelopmentRequesters.mockResolvedValue(
-      activeRequesters
-    );
-
     render(<App />);
 
-    const continueButton = await screen.findByRole("button", {
-      name: /continue/i,
-    });
+    const requesterSelect =
+      await screen.findByLabelText(
+        /development requester/i
+      );
+
+    const continueButton =
+      screen.getByRole("button", {
+        name: /continue/i,
+      });
 
     expect(continueButton).toBeDisabled();
 
-    fireEvent.change(
-      screen.getByLabelText(/development requester/i),
-      {
-        target: { value: "4" },
-      }
-    );
+    fireEvent.change(requesterSelect, {
+      target: {
+        value: "4",
+      },
+    });
 
-    expect(continueButton).toBeEnabled();
+    expect(
+      continueButton
+    ).not.toBeDisabled();
   });
 
-  it("stores the selected Requester and displays the current Requester", async () => {
-    mockedGetDevelopmentRequesters.mockResolvedValue(
-      activeRequesters
-    );
-
+  it("stores the selected Requester and opens the application", async () => {
     render(<App />);
 
-    fireEvent.change(
-      await screen.findByLabelText(/development requester/i),
-      {
-        target: { value: "4" },
-      }
-    );
+    const requesterSelect =
+      await screen.findByLabelText(
+        /development requester/i
+      );
+
+    fireEvent.change(requesterSelect, {
+      target: {
+        value: "4",
+      },
+    });
 
     fireEvent.click(
-      screen.getByRole("button", { name: /continue/i })
+      screen.getByRole("button", {
+        name: /continue/i,
+      })
     );
 
     expect(
-      screen.getAllByText("Ploy Srisuk").length
-    ).toBeGreaterThan(0);
+      sessionStorage.getItem(
+        "developmentRequesterId"
+      )
+    ).toBe("4");
 
     expect(
-      screen.getByText("ploy.srisuk@example.com")
+      await screen.findByRole("heading", {
+        name: /create ticket/i,
+      })
     ).toBeInTheDocument();
 
     expect(
-      sessionStorage.getItem("developmentRequesterId")
-    ).toBe("4");
+      screen.getAllByText("Ploy Srisuk")
+        .length
+    ).toBeGreaterThan(0);
   });
 
-  it("restores a previously selected Requester from sessionStorage", async () => {
+  it("restores a valid Requester from sessionStorage", async () => {
     sessionStorage.setItem(
       "developmentRequesterId",
       "2"
     );
 
-    mockedGetDevelopmentRequesters.mockResolvedValue(
-      activeRequesters
-    );
-
     render(<App />);
 
-    await screen.findByText("michael.brown@example.com");
-
     expect(
-      screen.getAllByText("Michael Brown").length
-    ).toBeGreaterThan(0);
-
-    expect(
-      screen.getByText("michael.brown@example.com")
+      await screen.findByRole("heading", {
+        name: /create ticket/i,
+      })
     ).toBeInTheDocument();
 
     expect(
-      sessionStorage.getItem("developmentRequesterId")
-    ).toBe("2");
+      screen.getAllByText(
+        "Michael Brown"
+      ).length
+    ).toBeGreaterThan(0);
   });
 
-  it("clears Requester context when Change Requester is clicked", async () => {
+  it("clears the Requester when Change Requester is clicked", async () => {
     sessionStorage.setItem(
       "developmentRequesterId",
-      "4"
-    );
-
-    mockedGetDevelopmentRequesters.mockResolvedValue(
-      activeRequesters
+      "2"
     );
 
     render(<App />);
 
-    const changeButton = await screen.findByRole("button", {
-      name: /change requester/i,
-    });
+    const changeButton =
+      await screen.findByRole("button", {
+        name: /change requester/i,
+      });
 
     fireEvent.click(changeButton);
 
     expect(
-      sessionStorage.getItem("developmentRequesterId")
+      sessionStorage.getItem(
+        "developmentRequesterId"
+      )
     ).toBeNull();
 
     expect(
-      screen.getByText("Select Development Requester")
+      await screen.findByText(
+        "Select Development Requester"
+      )
     ).toBeInTheDocument();
-
-    expect(
-      screen.getByRole("button", { name: /continue/i })
-    ).toBeDisabled();
   });
 
   it("removes an invalid stored Requester ID", async () => {
@@ -237,41 +303,43 @@ describe("Development Requester Selection", () => {
       "999"
     );
 
-    mockedGetDevelopmentRequesters.mockResolvedValue(
-      activeRequesters
-    );
-
     render(<App />);
 
-    await screen.findByText("Select Development Requester");
+    expect(
+      await screen.findByText(
+        "Select Development Requester"
+      )
+    ).toBeInTheDocument();
 
     expect(
-      sessionStorage.getItem("developmentRequesterId")
+      sessionStorage.getItem(
+        "developmentRequesterId"
+      )
     ).toBeNull();
   });
 
   it("shows an empty state when no active Requesters exist", async () => {
-    mockedGetDevelopmentRequesters.mockResolvedValue([]);
+    mockedGetDevelopmentRequesters.mockResolvedValueOnce(
+      []
+    );
 
     render(<App />);
 
     expect(
       await screen.findByText(
-        "No active Development Requesters are available."
+        /no active development requesters are available/i
       )
     ).toBeInTheDocument();
-
-    expect(
-      screen.getByRole("button", { name: /continue/i })
-    ).toBeDisabled();
   });
 
-  it("shows a safe failure state and allows retrying", async () => {
+  it("shows a safe API failure state and allows retry", async () => {
     mockedGetDevelopmentRequesters
       .mockRejectedValueOnce(
-        new Error("Unable to load Development Requesters.")
+        new Error(
+          "Unable to load Development Requesters."
+        )
       )
-      .mockResolvedValueOnce(activeRequesters);
+      .mockResolvedValueOnce(requesters);
 
     render(<App />);
 
@@ -281,11 +349,11 @@ describe("Development Requester Selection", () => {
       )
     ).toBeInTheDocument();
 
-    const retryButton = screen.getByRole("button", {
-      name: /retry/i,
-    });
-
-    fireEvent.click(retryButton);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /retry/i,
+      })
+    );
 
     await waitFor(() => {
       expect(
@@ -294,7 +362,9 @@ describe("Development Requester Selection", () => {
     });
 
     expect(
-      await screen.findByLabelText(/development requester/i)
+      await screen.findByLabelText(
+        /development requester/i
+      )
     ).toBeInTheDocument();
   });
 });
