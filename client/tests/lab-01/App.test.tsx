@@ -1,57 +1,82 @@
-import { afterEach, describe, it, expect, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+
 import App from "../../src/App.js";
-import * as api from "../../src/api.js";
+import {
+  getDevelopmentRequesters,
+  type DevelopmentRequester,
+} from "../../src/api.js";
+
+vi.mock("../../src/api.js", () => ({
+  checkSystem: vi.fn(),
+  getDevelopmentRequesters: vi.fn(),
+}));
+
+const mockedGetDevelopmentRequesters = vi.mocked(
+  getDevelopmentRequesters
+);
+
+const requesters: DevelopmentRequester[] = [
+  {
+    id: 1,
+    name: "Jennifer Anderson",
+    email: "jennifer.anderson@example.com",
+  },
+];
 
 describe("App", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+
+    mockedGetDevelopmentRequesters.mockResolvedValue(
+      requesters
+    );
   });
 
-  it("renders the TokTickIT heading", () => {
+  it("renders the TokTickIT application heading", async () => {
     render(<App />);
-    expect(screen.getByText(/TokTickIT/i)).toBeInTheDocument();
-  });
-
-  it("shows Online and the seeded categories on success", async () => {
-    vi.spyOn(api, "checkSystem").mockResolvedValue({
-      online: true,
-      categories: [
-        { id: 1, name: "Account and Access" },
-        { id: 2, name: "Hardware" },
-        { id: 3, name: "Software" },
-        { id: 4, name: "Network" },
-      ],
-    });
-
-    render(<App />);
-
-    fireEvent.click(
-      screen.getByRole("button", { name: /check system/i })
-    );
-
-    expect(await screen.findByText("Online")).toBeInTheDocument();
-    expect(screen.getByText("Account and Access")).toBeInTheDocument();
-    expect(screen.getByText("Hardware")).toBeInTheDocument();
-    expect(screen.getByText("Software")).toBeInTheDocument();
-    expect(screen.getByText("Network")).toBeInTheDocument();
-  });
-
-  it("shows an Offline error message when the API is unavailable", async () => {
-    vi.spyOn(api, "checkSystem").mockRejectedValue(
-      new Error("Unable to connect to TokTickIT API")
-    );
-
-    render(<App />);
-
-    fireEvent.click(
-      screen.getByRole("button", { name: /check system/i })
-    );
-
-    expect(await screen.findByText("Offline")).toBeInTheDocument();
 
     expect(
-      screen.getByText("Unable to connect to TokTickIT API")
+      screen.getByText("TokTickIT")
+    ).toBeInTheDocument();
+
+    expect(
+      await screen.findByText("Select Development Requester")
+    ).toBeInTheDocument();
+  });
+
+  it("renders the current Lab 2 Requester entry screen", async () => {
+    render(<App />);
+
+    expect(
+      await screen.findByLabelText(/development requester/i)
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("button", {
+        name: /continue/i,
+      })
+    ).toBeDisabled();
+  });
+
+  it("shows a safe error when the Requester API is unavailable", async () => {
+    mockedGetDevelopmentRequesters.mockRejectedValueOnce(
+      new Error("Unable to load Development Requesters.")
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByText(
+        "Unable to load Development Requesters."
+      )
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("button", {
+        name: /retry/i,
+      })
     ).toBeInTheDocument();
   });
 });
