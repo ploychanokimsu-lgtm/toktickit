@@ -6,6 +6,8 @@ import {
   useState,
 } from "react";
 
+import RequesterTicketDetail from "./RequesterTicketDetail.js";
+
 import {
   createTicket,
   getCategories,
@@ -31,7 +33,8 @@ type RequesterViewState =
 
 type AppScreen =
   | "create"
-  | "myTickets";
+  | "myTickets"
+  | "ticketDetail";
 
 interface FormErrors {
   categoryId?: string;
@@ -43,8 +46,7 @@ interface FormErrors {
 function createSubmissionId(): string {
   if (
     typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID ===
-      "function"
+    typeof crypto.randomUUID === "function"
   ) {
     return crypto.randomUUID();
   }
@@ -54,12 +56,8 @@ function createSubmissionId(): string {
     .slice(2)}`;
 }
 
-function formatDate(
-  value: string
-): string {
-  return new Date(
-    value
-  ).toLocaleString();
+function formatDate(value: string): string {
+  return new Date(value).toLocaleString();
 }
 
 // ============================================================
@@ -71,17 +69,14 @@ function CreateTicketScreen({
 }: {
   requester: DevelopmentRequester;
 }) {
-  const [
-    categories,
-    setCategories,
-  ] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<
+    Category[]
+  >([]);
 
   const [
     relatedSystems,
     setRelatedSystems,
-  ] = useState<
-    RelatedSystem[]
-  >([]);
+  ] = useState<RelatedSystem[]>([]);
 
   const [
     referenceLoading,
@@ -93,25 +88,19 @@ function CreateTicketScreen({
     setReferenceError,
   ] = useState("");
 
-  const [
-    categoryId,
-    setCategoryId,
-  ] = useState("");
+  const [categoryId, setCategoryId] =
+    useState("");
 
   const [
     relatedSystemId,
     setRelatedSystemId,
   ] = useState("");
 
-  const [
-    summary,
-    setSummary,
-  ] = useState("");
+  const [summary, setSummary] =
+    useState("");
 
-  const [
-    description,
-    setDescription,
-  ] = useState("");
+  const [description, setDescription] =
+    useState("");
 
   const [
     requestedPriority,
@@ -129,10 +118,8 @@ function CreateTicketScreen({
     setSubmitError,
   ] = useState("");
 
-  const [
-    submitting,
-    setSubmitting,
-  ] = useState(false);
+  const [submitting, setSubmitting] =
+    useState(false);
 
   const [
     createdTicket,
@@ -142,10 +129,9 @@ function CreateTicketScreen({
       null
     );
 
-  const submissionIdRef =
-    useRef(
-      createSubmissionId()
-    );
+  const submissionIdRef = useRef(
+    createSubmissionId()
+  );
 
   const loadReferenceData =
     useCallback(async () => {
@@ -175,9 +161,7 @@ function CreateTicketScreen({
             : "Unable to load Ticket reference data."
         );
       } finally {
-        setReferenceLoading(
-          false
-        );
+        setReferenceLoading(false);
       }
     }, []);
 
@@ -186,8 +170,7 @@ function CreateTicketScreen({
   }, [loadReferenceData]);
 
   function validateForm(): FormErrors {
-    const nextErrors: FormErrors =
-      {};
+    const nextErrors: FormErrors = {};
 
     if (!categoryId) {
       nextErrors.categoryId =
@@ -202,9 +185,7 @@ function CreateTicketScreen({
     const trimmedSummary =
       summary.trim();
 
-    if (
-      trimmedSummary.length < 5
-    ) {
+    if (trimmedSummary.length < 5) {
       nextErrors.summary =
         "Ticket Summary must contain at least 5 characters.";
     } else if (
@@ -218,14 +199,12 @@ function CreateTicketScreen({
       description.trim();
 
     if (
-      trimmedDescription.length <
-      10
+      trimmedDescription.length < 10
     ) {
       nextErrors.description =
         "Description must contain at least 10 characters.";
     } else if (
-      trimmedDescription.length >
-      5000
+      trimmedDescription.length > 5000
     ) {
       nextErrors.description =
         "Description must not exceed 5000 characters.";
@@ -247,8 +226,8 @@ function CreateTicketScreen({
     setCreatedTicket(null);
 
     if (
-      Object.keys(nextErrors)
-        .length > 0
+      Object.keys(nextErrors).length >
+      0
     ) {
       return;
     }
@@ -268,12 +247,9 @@ function CreateTicketScreen({
             Number(categoryId),
 
           relatedSystemId:
-            Number(
-              relatedSystemId
-            ),
+            Number(relatedSystemId),
 
-          summary:
-            summary.trim(),
+          summary: summary.trim(),
 
           requestedPriority,
 
@@ -296,12 +272,11 @@ function CreateTicketScreen({
     }
   }
 
-  const ticketDate =
-    createdTicket
-      ? formatDate(
-          createdTicket.createdAt
-        )
-      : "Generated when submitted";
+  const ticketDate = createdTicket
+    ? formatDate(
+        createdTicket.createdAt
+      )
+    : "Generated when submitted";
 
   return (
     <main className="tk-page tk-page-medium">
@@ -324,8 +299,7 @@ function CreateTicketScreen({
           role="status"
         >
           <strong>
-            Ticket created
-            successfully.
+            Ticket created successfully.
           </strong>
 
           <div>
@@ -378,9 +352,7 @@ function CreateTicketScreen({
           </h2>
 
           <form
-            onSubmit={
-              handleSubmit
-            }
+            onSubmit={handleSubmit}
             noValidate
           >
             <div className="row g-3">
@@ -418,14 +390,10 @@ function CreateTicketScreen({
 
                   <div className="tk-readonly">
                     <strong>
-                      {
-                        requester.name
-                      }
+                      {requester.name}
                     </strong>
                     {" — "}
-                    {
-                      requester.email
-                    }
+                    {requester.email}
                   </div>
 
                   <p className="tk-help-text">
@@ -458,24 +426,17 @@ function CreateTicketScreen({
                         ? "tk-input-invalid"
                         : ""
                     }`}
-                    value={
-                      categoryId
-                    }
-                    onChange={(
-                      event
-                    ) => {
+                    value={categoryId}
+                    onChange={(event) => {
                       setCategoryId(
-                        event.target
-                          .value
+                        event.target.value
                       );
 
                       if (
                         errors.categoryId
                       ) {
                         setErrors(
-                          (
-                            current
-                          ) => ({
+                          (current) => ({
                             ...current,
                             categoryId:
                               undefined,
@@ -490,20 +451,16 @@ function CreateTicketScreen({
                       ) ||
                       submitting
                     }
-                    aria-invalid={
-                      Boolean(
-                        errors.categoryId
-                      )
-                    }
+                    aria-invalid={Boolean(
+                      errors.categoryId
+                    )}
                   >
                     <option value="">
                       Select a category
                     </option>
 
                     {categories.map(
-                      (
-                        category
-                      ) => (
+                      (category) => (
                         <option
                           key={
                             category.id
@@ -555,21 +512,16 @@ function CreateTicketScreen({
                     value={
                       relatedSystemId
                     }
-                    onChange={(
-                      event
-                    ) => {
+                    onChange={(event) => {
                       setRelatedSystemId(
-                        event.target
-                          .value
+                        event.target.value
                       );
 
                       if (
                         errors.relatedSystemId
                       ) {
                         setErrors(
-                          (
-                            current
-                          ) => ({
+                          (current) => ({
                             ...current,
                             relatedSystemId:
                               undefined,
@@ -584,11 +536,9 @@ function CreateTicketScreen({
                       ) ||
                       submitting
                     }
-                    aria-invalid={
-                      Boolean(
-                        errors.relatedSystemId
-                      )
-                    }
+                    aria-invalid={Boolean(
+                      errors.relatedSystemId
+                    )}
                   >
                     <option value="">
                       Select a related
@@ -605,9 +555,7 @@ function CreateTicketScreen({
                             system.id
                           }
                         >
-                          {
-                            system.name
-                          }
+                          {system.name}
                         </option>
                       )
                     )}
@@ -648,29 +596,20 @@ function CreateTicketScreen({
                     type="text"
                     value={summary}
                     maxLength={150}
-                    disabled={
-                      submitting
-                    }
-                    aria-invalid={
-                      Boolean(
-                        errors.summary
-                      )
-                    }
-                    onChange={(
-                      event
-                    ) => {
+                    disabled={submitting}
+                    aria-invalid={Boolean(
+                      errors.summary
+                    )}
+                    onChange={(event) => {
                       setSummary(
-                        event.target
-                          .value
+                        event.target.value
                       );
 
                       if (
                         errors.summary
                       ) {
                         setErrors(
-                          (
-                            current
-                          ) => ({
+                          (current) => ({
                             ...current,
                             summary:
                               undefined,
@@ -715,12 +654,8 @@ function CreateTicketScreen({
                     value={
                       requestedPriority
                     }
-                    disabled={
-                      submitting
-                    }
-                    onChange={(
-                      event
-                    ) =>
+                    disabled={submitting}
+                    onChange={(event) =>
                       setRequestedPriority(
                         event.target
                           .value as RequestedPriority
@@ -779,33 +714,22 @@ function CreateTicketScreen({
                         : ""
                     }`}
                     rows={6}
-                    value={
-                      description
-                    }
+                    value={description}
                     maxLength={5000}
-                    disabled={
-                      submitting
-                    }
-                    aria-invalid={
-                      Boolean(
-                        errors.description
-                      )
-                    }
-                    onChange={(
-                      event
-                    ) => {
+                    disabled={submitting}
+                    aria-invalid={Boolean(
+                      errors.description
+                    )}
+                    onChange={(event) => {
                       setDescription(
-                        event.target
-                          .value
+                        event.target.value
                       );
 
                       if (
                         errors.description
                       ) {
                         setErrors(
-                          (
-                            current
-                          ) => ({
+                          (current) => ({
                             ...current,
                             description:
                               undefined,
@@ -874,37 +798,29 @@ function CreateTicketScreen({
 
 function MyTicketsScreen({
   requester,
+  onOpenTicket,
 }: {
   requester: DevelopmentRequester;
+  onOpenTicket: (
+    ticketId: number
+  ) => void;
 }) {
-  const [
-    tickets,
-    setTickets,
-  ] = useState<
-    TicketListItem[]
-  >([]);
+  const [tickets, setTickets] =
+    useState<TicketListItem[]>([]);
 
-  const [
-    categories,
-    setCategories,
-  ] = useState<Category[]>([]);
+  const [categories, setCategories] =
+    useState<Category[]>([]);
 
   const [
     relatedSystems,
     setRelatedSystems,
-  ] = useState<
-    RelatedSystem[]
-  >([]);
+  ] = useState<RelatedSystem[]>([]);
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [
-    error,
-    setError,
-  ] = useState("");
+  const [error, setError] =
+    useState("");
 
   const [
     searchInput,
@@ -916,10 +832,8 @@ function MyTicketsScreen({
     setAppliedSearch,
   ] = useState("");
 
-  const [
-    categoryId,
-    setCategoryId,
-  ] = useState("");
+  const [categoryId, setCategoryId] =
+    useState("");
 
   const [
     relatedSystemId,
@@ -933,24 +847,14 @@ function MyTicketsScreen({
     RequestedPriority | ""
   >("");
 
-  const [
-    sortValue,
-    setSortValue,
-  ] = useState(
-    "updatedAt:desc"
-  );
+  const [sortValue, setSortValue] =
+    useState("updatedAt:desc");
 
-  const [
-    page,
-    setPage,
-  ] = useState(1);
+  const [page, setPage] =
+    useState(1);
 
-  const [
-    pageSize,
-    setPageSize,
-  ] = useState<
-    10 | 20 | 50
-  >(10);
+  const [pageSize, setPageSize] =
+    useState<10 | 20 | 50>(10);
 
   const [
     totalItems,
@@ -992,8 +896,8 @@ function MyTicketsScreen({
           loadedSystems
         );
       } catch {
-        // Ticket API failure state remains
-        // the primary My Tickets error.
+        // My Tickets API error
+        // remains the main screen error.
       }
     }
 
@@ -1012,15 +916,14 @@ function MyTicketsScreen({
       const [
         sortBy,
         sortOrder,
-      ] =
-        sortValue.split(":") as [
-          "updatedAt" |
-            "createdAt" |
-            "ticketNumber" |
-            "summary" |
-            "requestedPriority",
-          "asc" | "desc",
-        ];
+      ] = sortValue.split(":") as [
+        | "updatedAt"
+        | "createdAt"
+        | "ticketNumber"
+        | "summary"
+        | "requestedPriority",
+        "asc" | "desc",
+      ];
 
       try {
         const result =
@@ -1241,9 +1144,7 @@ function MyTicketsScreen({
                     </option>
 
                     {categories.map(
-                      (
-                        category
-                      ) => (
+                      (category) => (
                         <option
                           key={
                             category.id
@@ -1341,12 +1242,15 @@ function MyTicketsScreen({
                     <option value="">
                       All
                     </option>
+
                     <option value="LOW">
                       Low
                     </option>
+
                     <option value="MEDIUM">
                       Medium
                     </option>
+
                     <option value="HIGH">
                       High
                     </option>
@@ -1366,9 +1270,7 @@ function MyTicketsScreen({
                   <select
                     id="ticket-sort"
                     className="tk-select"
-                    value={
-                      sortValue
-                    }
+                    value={sortValue}
                     onChange={(
                       event
                     ) => {
@@ -1507,6 +1409,7 @@ function MyTicketsScreen({
                   </span>
                 </div>
 
+                {/* Desktop / Tablet */}
                 <div className="d-none d-md-block">
                   <div className="table-responsive">
                     <table className="table align-middle">
@@ -1533,14 +1436,15 @@ function MyTicketsScreen({
                           <th>
                             Last Updated
                           </th>
+                          <th>
+                            Action
+                          </th>
                         </tr>
                       </thead>
 
                       <tbody>
                         {tickets.map(
-                          (
-                            ticket
-                          ) => (
+                          (ticket) => (
                             <tr
                               key={
                                 ticket.id
@@ -1603,6 +1507,20 @@ function MyTicketsScreen({
                                   ticket.updatedAt
                                 )}
                               </td>
+
+                              <td>
+                                <button
+                                  type="button"
+                                  className="tk-button tk-button-secondary tk-button-sm"
+                                  onClick={() =>
+                                    onOpenTicket(
+                                      ticket.id
+                                    )
+                                  }
+                                >
+                                  View
+                                </button>
+                              </td>
                             </tr>
                           )
                         )}
@@ -1611,12 +1529,11 @@ function MyTicketsScreen({
                   </div>
                 </div>
 
+                {/* Mobile */}
                 <div className="d-md-none">
                   <div className="d-grid gap-3">
                     {tickets.map(
-                      (
-                        ticket
-                      ) => (
+                      (ticket) => (
                         <article
                           key={
                             ticket.id
@@ -1676,6 +1593,20 @@ function MyTicketsScreen({
                                 ticket.updatedAt
                               )}
                             </p>
+
+                            <div className="tk-button-row">
+                              <button
+                                type="button"
+                                className="tk-button tk-button-secondary tk-button-sm"
+                                onClick={() =>
+                                  onOpenTicket(
+                                    ticket.id
+                                  )
+                                }
+                              >
+                                View Ticket
+                              </button>
+                            </div>
                           </div>
                         </article>
                       )
@@ -1706,12 +1637,8 @@ function MyTicketsScreen({
                     <select
                       id="page-size"
                       className="tk-select"
-                      value={
-                        pageSize
-                      }
-                      onChange={(
-                        event
-                      ) => {
+                      value={pageSize}
+                      onChange={(event) => {
                         setPageSize(
                           Number(
                             event.target
@@ -1721,15 +1648,18 @@ function MyTicketsScreen({
                             | 20
                             | 50
                         );
+
                         setPage(1);
                       }}
                     >
                       <option value="10">
                         10
                       </option>
+
                       <option value="20">
                         20
                       </option>
+
                       <option value="50">
                         50
                       </option>
@@ -1745,9 +1675,7 @@ function MyTicketsScreen({
                       }
                       onClick={() =>
                         setPage(
-                          (
-                            current
-                          ) =>
+                          (current) =>
                             Math.max(
                               1,
                               current -
@@ -1770,9 +1698,7 @@ function MyTicketsScreen({
                       }
                       onClick={() =>
                         setPage(
-                          (
-                            current
-                          ) =>
+                          (current) =>
                             current +
                             1
                         )
@@ -1791,16 +1717,14 @@ function MyTicketsScreen({
 }
 
 // ============================================================
-// App
+// Main App
 // ============================================================
 
 export default function App() {
-  const [
-    requesters,
-    setRequesters,
-  ] = useState<
-    DevelopmentRequester[]
-  >([]);
+  const [requesters, setRequesters] =
+    useState<
+      DevelopmentRequester[]
+    >([]);
 
   const [
     selectedId,
@@ -1832,9 +1756,14 @@ export default function App() {
     activeScreen,
     setActiveScreen,
   ] =
-    useState<AppScreen>(
-      "create"
-    );
+    useState<AppScreen>("create");
+
+  const [
+    selectedTicketId,
+    setSelectedTicketId,
+  ] = useState<number | null>(
+    null
+  );
 
   const loadRequesters =
     useCallback(async () => {
@@ -1850,9 +1779,7 @@ export default function App() {
         if (
           loaded.length === 0
         ) {
-          setCurrentRequester(
-            null
-          );
+          setCurrentRequester(null);
           setSelectedId("");
           setViewState("empty");
           return;
@@ -1868,14 +1795,10 @@ export default function App() {
             loaded.find(
               (requester) =>
                 requester.id ===
-                Number(
-                  storedId
-                )
+                Number(storedId)
             );
 
-          if (
-            storedRequester
-          ) {
+          if (storedRequester) {
             setSelectedId(
               String(
                 storedRequester.id
@@ -1899,9 +1822,7 @@ export default function App() {
 
         setViewState("ready");
       } catch (error) {
-        setCurrentRequester(
-          null
-        );
+        setCurrentRequester(null);
 
         setErrorMessage(
           error instanceof Error
@@ -1938,9 +1859,8 @@ export default function App() {
       requester
     );
 
-    setActiveScreen(
-      "create"
-    );
+    setSelectedTicketId(null);
+    setActiveScreen("create");
   }
 
   function handleChangeRequester() {
@@ -1950,6 +1870,7 @@ export default function App() {
 
     setSelectedId("");
     setCurrentRequester(null);
+    setSelectedTicketId(null);
     setActiveScreen("create");
   }
 
@@ -1993,21 +1914,29 @@ export default function App() {
             type="button"
             className={`tk-nav-link ${
               activeScreen ===
-              "myTickets"
+                "myTickets" ||
+              activeScreen ===
+                "ticketDetail"
                 ? "active"
                 : ""
             }`}
             aria-current={
               activeScreen ===
-              "myTickets"
+                "myTickets" ||
+              activeScreen ===
+                "ticketDetail"
                 ? "page"
                 : undefined
             }
-            onClick={() =>
+            onClick={() => {
+              setSelectedTicketId(
+                null
+              );
+
               setActiveScreen(
                 "myTickets"
-              )
-            }
+              );
+            }}
           >
             My Tickets
           </button>
@@ -2026,30 +1955,71 @@ export default function App() {
                 ? "page"
                 : undefined
             }
-            onClick={() =>
+            onClick={() => {
+              setSelectedTicketId(
+                null
+              );
+
               setActiveScreen(
                 "create"
-              )
-            }
+              );
+            }}
           >
             Create Ticket
           </button>
         </nav>
 
         {activeScreen ===
-        "create" ? (
+          "create" && (
           <CreateTicketScreen
             requester={
               currentRequester
             }
           />
-        ) : (
+        )}
+
+        {activeScreen ===
+          "myTickets" && (
           <MyTicketsScreen
             requester={
               currentRequester
             }
+            onOpenTicket={(
+              ticketId
+            ) => {
+              setSelectedTicketId(
+                ticketId
+              );
+
+              setActiveScreen(
+                "ticketDetail"
+              );
+            }}
           />
         )}
+
+        {activeScreen ===
+          "ticketDetail" &&
+          selectedTicketId !==
+            null && (
+            <RequesterTicketDetail
+              requester={
+                currentRequester
+              }
+              ticketId={
+                selectedTicketId
+              }
+              onBack={() => {
+                setSelectedTicketId(
+                  null
+                );
+
+                setActiveScreen(
+                  "myTickets"
+                );
+              }}
+            />
+          )}
       </div>
     );
   }
@@ -2158,12 +2128,8 @@ export default function App() {
                   <select
                     id="development-requester"
                     className="tk-select"
-                    value={
-                      selectedId
-                    }
-                    onChange={(
-                      event
-                    ) =>
+                    value={selectedId}
+                    onChange={(event) =>
                       setSelectedId(
                         event.target
                           .value
@@ -2175,9 +2141,7 @@ export default function App() {
                     </option>
 
                     {requesters.map(
-                      (
-                        requester
-                      ) => (
+                      (requester) => (
                         <option
                           key={
                             requester.id

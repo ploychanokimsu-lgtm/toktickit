@@ -348,3 +348,81 @@ export async function getMyTickets(
 
   return (await response.json()) as TicketListResponse;
 }
+
+export interface TicketAttachmentMetadata {
+  id: number;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
+  isRemoved: boolean;
+  uploadedAt: string;
+  removedAt: string | null;
+  removalReason: string | null;
+}
+
+export interface TicketDetail {
+  id: number;
+  ticketNumber: string;
+  requesterId: number;
+  categoryId: number;
+  relatedSystemId: number;
+
+  summary: string;
+  description: string;
+
+  requestedPriority: RequestedPriority;
+  currentStatus: "NEW";
+  itPriority: RequestedPriority | null;
+
+  createdAt: string;
+  updatedAt: string;
+
+  requester: {
+    id: number;
+    name: string;
+    email: string;
+  };
+
+  category: {
+    id: number;
+    name: string;
+  };
+
+  relatedSystem: {
+    id: number;
+    name: string;
+  };
+
+  attachments: TicketAttachmentMetadata[];
+}
+
+export async function getTicketDetail(
+  requesterId: number,
+  ticketId: number
+): Promise<TicketDetail> {
+  const response = await fetch(
+    `${API_URL}/api/tickets/${ticketId}`,
+    {
+      headers: {
+        "X-Development-Requester-Id":
+          String(requesterId),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const message =
+      await getErrorMessage(
+        response,
+        "Unable to load Ticket Detail. Please try again."
+      );
+
+    throw new Error(message);
+  }
+
+  const data: {
+    ticket: TicketDetail;
+  } = await response.json();
+
+  return data.ticket;
+}
