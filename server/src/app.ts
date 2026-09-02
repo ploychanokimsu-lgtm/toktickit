@@ -18,13 +18,21 @@ app.use(express.json());
 
 const prisma = getPrisma();
 
+// ============================================================
+// Constants / Types
+// ============================================================
+
 const ALLOWED_PRIORITIES = [
   "LOW",
   "MEDIUM",
   "HIGH",
 ] as const;
 
-const ALLOWED_PAGE_SIZES = [10, 20, 50];
+const ALLOWED_PAGE_SIZES = [
+  10,
+  20,
+  50,
+];
 
 const ALLOWED_SORT_FIELDS = [
   "updatedAt",
@@ -72,9 +80,9 @@ type RequesterContextResult =
       };
     };
 
-// ------------------------------------------------------------
+// ============================================================
 // Helpers
-// ------------------------------------------------------------
+// ============================================================
 
 function validationError(
   res: Response,
@@ -85,7 +93,11 @@ function validationError(
     error: {
       code: "VALIDATION_ERROR",
       message,
-      ...(fields ? { fields } : {}),
+      ...(fields
+        ? {
+            fields,
+          }
+        : {}),
     },
   });
 }
@@ -125,7 +137,8 @@ async function getActiveRequesterContext(
       ok: false,
       error: {
         status: 400,
-        code: "REQUESTER_CONTEXT_REQUIRED",
+        code:
+          "REQUESTER_CONTEXT_REQUIRED",
         message:
           "A Development Requester context is required.",
       },
@@ -140,7 +153,8 @@ async function getActiveRequesterContext(
       ok: false,
       error: {
         status: 400,
-        code: "INVALID_REQUESTER_CONTEXT",
+        code:
+          "INVALID_REQUESTER_CONTEXT",
         message:
           "The Development Requester context is invalid.",
       },
@@ -153,6 +167,7 @@ async function getActiveRequesterContext(
         id: requesterId,
         isActive: true,
       },
+
       select: {
         id: true,
         name: true,
@@ -165,7 +180,8 @@ async function getActiveRequesterContext(
       ok: false,
       error: {
         status: 400,
-        code: "INVALID_REQUESTER_CONTEXT",
+        code:
+          "INVALID_REQUESTER_CONTEXT",
         message:
           "The Development Requester context is invalid or inactive.",
       },
@@ -205,7 +221,8 @@ function buildOrderBy(
 
     case "requestedPriority":
       primary = {
-        requestedPriority: sortOrder,
+        requestedPriority:
+          sortOrder,
       };
       break;
 
@@ -226,13 +243,15 @@ function buildOrderBy(
 }
 
 async function generateTicketNumber(): Promise<string> {
-  const year = new Date().getFullYear();
+  const year =
+    new Date().getFullYear();
 
   const latestTicket =
     await prisma.ticket.findFirst({
       orderBy: {
         id: "desc",
       },
+
       select: {
         id: true,
       },
@@ -246,13 +265,16 @@ async function generateTicketNumber(): Promise<string> {
   ).padStart(6, "0")}`;
 }
 
-// ------------------------------------------------------------
+// ============================================================
 // Health
-// ------------------------------------------------------------
+// ============================================================
 
 app.get(
   "/api/health",
-  (_req: Request, res: Response) => {
+  (
+    _req: Request,
+    res: Response
+  ) => {
     res.status(200).json({
       status: "ok",
       service: "TokTickIT API",
@@ -260,29 +282,36 @@ app.get(
   }
 );
 
-// ------------------------------------------------------------
+// ============================================================
 // Categories
-// ------------------------------------------------------------
+// ============================================================
 
 app.get(
   "/api/categories",
-  async (_req: Request, res: Response) => {
+  async (
+    _req: Request,
+    res: Response
+  ) => {
     try {
       const categories =
         await prisma.category.findMany({
           where: {
             isActive: true,
           },
+
           select: {
             id: true,
             name: true,
           },
+
           orderBy: {
             id: "asc",
           },
         });
 
-      res.status(200).json(categories);
+      res
+        .status(200)
+        .json(categories);
     } catch (error) {
       console.error(
         "Failed to fetch categories:",
@@ -300,24 +329,29 @@ app.get(
   }
 );
 
-// ------------------------------------------------------------
+// ============================================================
 // Development Requesters
-// ------------------------------------------------------------
+// ============================================================
 
 app.get(
   "/api/requesters",
-  async (_req: Request, res: Response) => {
+  async (
+    _req: Request,
+    res: Response
+  ) => {
     try {
       const requesters =
         await prisma.requesterUser.findMany({
           where: {
             isActive: true,
           },
+
           select: {
             id: true,
             name: true,
             email: true,
           },
+
           orderBy: {
             name: "asc",
           },
@@ -343,23 +377,28 @@ app.get(
   }
 );
 
-// ------------------------------------------------------------
+// ============================================================
 // Related Systems
-// ------------------------------------------------------------
+// ============================================================
 
 app.get(
   "/api/related-systems",
-  async (_req: Request, res: Response) => {
+  async (
+    _req: Request,
+    res: Response
+  ) => {
     try {
       const relatedSystems =
         await prisma.relatedSystem.findMany({
           where: {
             isActive: true,
           },
+
           select: {
             id: true,
             name: true,
           },
+
           orderBy: {
             name: "asc",
           },
@@ -385,28 +424,42 @@ app.get(
   }
 );
 
-// ------------------------------------------------------------
+// ============================================================
 // My Tickets
-// ------------------------------------------------------------
+// GET /api/tickets
+// ============================================================
 
 app.get(
   "/api/tickets",
-  async (req: Request, res: Response) => {
+  async (
+    req: Request,
+    res: Response
+  ) => {
     try {
+      // ------------------------------------------------------
+      // Requester context / ownership
+      // ------------------------------------------------------
+
       const requesterResult =
-        await getActiveRequesterContext(req);
+        await getActiveRequesterContext(
+          req
+        );
 
       if (!requesterResult.ok) {
         return res
           .status(
-            requesterResult.error.status
+            requesterResult.error
+              .status
           )
           .json({
             error: {
               code:
-                requesterResult.error.code,
+                requesterResult.error
+                  .code,
+
               message:
-                requesterResult.error.message,
+                requesterResult.error
+                  .message,
             },
           });
       }
@@ -414,14 +467,19 @@ app.get(
       const requesterId =
         requesterResult.requester.id;
 
+      // ------------------------------------------------------
+      // Query parameters
+      // ------------------------------------------------------
+
       const search =
         queryString(
           req.query.search
         )?.trim() ?? "";
 
       const pageRaw =
-        queryString(req.query.page) ??
-        "1";
+        queryString(
+          req.query.page
+        ) ?? "1";
 
       const pageSizeRaw =
         queryString(
@@ -440,7 +498,8 @@ app.get(
 
       const requestedPriorityRaw =
         queryString(
-          req.query.requestedPriority
+          req.query
+            .requestedPriority
         );
 
       const sortByRaw =
@@ -453,7 +512,8 @@ app.get(
           req.query.sortOrder
         ) ?? "desc";
 
-      const page = Number(pageRaw);
+      const page =
+        Number(pageRaw);
 
       const pageSize =
         Number(pageSizeRaw);
@@ -473,7 +533,9 @@ app.get(
       }
 
       if (
-        !Number.isInteger(pageSize) ||
+        !Number.isInteger(
+          pageSize
+        ) ||
         !ALLOWED_PAGE_SIZES.includes(
           pageSize
         )
@@ -493,7 +555,8 @@ app.get(
         | undefined;
 
       if (
-        categoryIdRaw !== undefined
+        categoryIdRaw !==
+        undefined
       ) {
         const parsed =
           positiveInteger(
@@ -534,7 +597,8 @@ app.get(
           );
         }
 
-        relatedSystemId = parsed;
+        relatedSystemId =
+          parsed;
       }
 
       // ------------------------------------------------------
@@ -598,14 +662,15 @@ app.get(
           | "desc";
 
       // ------------------------------------------------------
-      // Ownership-enforced WHERE clause
+      // Ownership-safe WHERE clause
       // ------------------------------------------------------
 
       const where: Prisma.TicketWhereInput =
         {
           requesterId,
 
-          ...(categoryId !== undefined
+          ...(categoryId !==
+          undefined
             ? {
                 categoryId,
               }
@@ -630,14 +695,19 @@ app.get(
                 OR: [
                   {
                     ticketNumber: {
-                      contains: search,
-                      mode: "insensitive",
+                      contains:
+                        search,
+                      mode:
+                        "insensitive",
                     },
                   },
+
                   {
                     summary: {
-                      contains: search,
-                      mode: "insensitive",
+                      contains:
+                        search,
+                      mode:
+                        "insensitive",
                     },
                   },
                 ],
@@ -652,96 +722,337 @@ app.get(
         );
 
       // ------------------------------------------------------
-      // Query
+      // Query Tickets + count
       // ------------------------------------------------------
 
-      const [tickets, totalItems] =
-        await prisma.$transaction([
-          prisma.ticket.findMany({
-            where,
+      const [
+        tickets,
+        totalItems,
+      ] =
+        await prisma.$transaction(
+          [
+            prisma.ticket.findMany(
+              {
+                where,
 
-            orderBy,
+                orderBy,
 
-            skip:
-              (page - 1) *
-              pageSize,
+                skip:
+                  (page - 1) *
+                  pageSize,
 
-            take: pageSize,
+                take: pageSize,
 
-            select: {
-              id: true,
-              ticketNumber: true,
-              requesterId: true,
-              categoryId: true,
-              relatedSystemId: true,
-              summary: true,
-              requestedPriority: true,
-              currentStatus: true,
-              createdAt: true,
-              updatedAt: true,
-
-              category: {
                 select: {
                   id: true,
-                  name: true,
-                },
-              },
 
-              relatedSystem: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          }),
+                  ticketNumber:
+                    true,
 
-          prisma.ticket.count({
-            where,
-          }),
-        ]);
+                  requesterId:
+                    true,
+
+                  categoryId:
+                    true,
+
+                  relatedSystemId:
+                    true,
+
+                  summary: true,
+
+                  requestedPriority:
+                    true,
+
+                  currentStatus:
+                    true,
+
+                  createdAt:
+                    true,
+
+                  updatedAt:
+                    true,
+
+                  category: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+
+                  relatedSystem:
+                    {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                },
+              }
+            ),
+
+            prisma.ticket.count({
+              where,
+            }),
+          ]
+        );
 
       const totalPages =
         totalItems === 0
           ? 0
           : Math.ceil(
-              totalItems / pageSize
+              totalItems /
+                pageSize
             );
 
-      return res.status(200).json({
-        tickets,
+      return res
+        .status(200)
+        .json({
+          tickets,
 
-        pagination: {
-          page,
-          pageSize,
-          totalItems,
-          totalPages,
-        },
-      });
+          pagination: {
+            page,
+            pageSize,
+            totalItems,
+            totalPages,
+          },
+        });
     } catch (error) {
       console.error(
         "Failed to fetch My Tickets:",
         error
       );
 
-      return res.status(500).json({
-        error: {
-          code: "INTERNAL_ERROR",
-          message:
-            "Unable to load Tickets. Please try again.",
-        },
-      });
+      return res
+        .status(500)
+        .json({
+          error: {
+            code:
+              "INTERNAL_ERROR",
+
+            message:
+              "Unable to load Tickets. Please try again.",
+          },
+        });
     }
   }
 );
 
-// ------------------------------------------------------------
+// ============================================================
+// Requester Ticket Detail
+// GET /api/tickets/:ticketId
+// ============================================================
+
+app.get(
+  "/api/tickets/:ticketId",
+  async (
+    req: Request,
+    res: Response
+  ) => {
+    try {
+      // ------------------------------------------------------
+      // Requester context
+      // ------------------------------------------------------
+
+      const requesterResult =
+        await getActiveRequesterContext(
+          req
+        );
+
+      if (!requesterResult.ok) {
+        return res
+          .status(
+            requesterResult.error
+              .status
+          )
+          .json({
+            error: {
+              code:
+                requesterResult.error
+                  .code,
+
+              message:
+                requesterResult.error
+                  .message,
+            },
+          });
+      }
+
+      // ------------------------------------------------------
+      // Ticket ID validation
+      // ------------------------------------------------------
+
+      const rawTicketId =
+        req.params.ticketId;
+
+      const ticketId =
+        positiveInteger(
+          rawTicketId
+        );
+
+      if (ticketId === null) {
+        return validationError(
+          res,
+          "Ticket ID is invalid."
+        );
+      }
+
+      // ------------------------------------------------------
+      // Ownership-enforced retrieval
+      // ------------------------------------------------------
+
+      const ticket =
+        await prisma.ticket.findFirst({
+          where: {
+            id: ticketId,
+
+            requesterId:
+              requesterResult
+                .requester.id,
+          },
+
+          select: {
+            id: true,
+
+            ticketNumber:
+              true,
+
+            requesterId:
+              true,
+
+            categoryId:
+              true,
+
+            relatedSystemId:
+              true,
+
+            summary: true,
+
+            description: true,
+
+            requestedPriority:
+              true,
+
+            currentStatus:
+              true,
+
+            itPriority: true,
+
+            createdAt: true,
+
+            updatedAt: true,
+
+            requester: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+
+            relatedSystem: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+
+            attachments: {
+              orderBy: {
+                uploadedAt:
+                  "asc",
+              },
+
+              select: {
+                id: true,
+
+                originalFilename:
+                  true,
+
+                mimeType:
+                  true,
+
+                sizeBytes:
+                  true,
+
+                isRemoved:
+                  true,
+
+                uploadedAt:
+                  true,
+
+                removedAt:
+                  true,
+
+                removalReason:
+                  true,
+              },
+            },
+          },
+        });
+
+      // ------------------------------------------------------
+      // Safe ownership failure:
+      // missing and non-owned Tickets return identical 404
+      // ------------------------------------------------------
+
+      if (!ticket) {
+        return res
+          .status(404)
+          .json({
+            error: {
+              code:
+                "TICKET_NOT_FOUND",
+
+              message:
+                "Ticket not found.",
+            },
+          });
+      }
+
+      return res
+        .status(200)
+        .json({
+          ticket,
+        });
+    } catch (error) {
+      console.error(
+        "Failed to fetch Ticket Detail:",
+        error
+      );
+
+      return res
+        .status(500)
+        .json({
+          error: {
+            code:
+              "INTERNAL_ERROR",
+
+            message:
+              "Unable to load Ticket Detail. Please try again.",
+          },
+        });
+    }
+  }
+);
+
+// ============================================================
 // Create Ticket
-// ------------------------------------------------------------
+// POST /api/tickets
+// ============================================================
 
 app.post(
   "/api/tickets",
-  async (req: Request, res: Response) => {
+  async (
+    req: Request,
+    res: Response
+  ) => {
     try {
       const body =
         req.body as CreateTicketBody;
@@ -753,8 +1064,8 @@ app.post(
       if (
         typeof body.clientSubmissionId !==
           "string" ||
-        body.clientSubmissionId.trim()
-          .length === 0
+        body.clientSubmissionId
+          .trim().length === 0
       ) {
         return validationError(
           res,
@@ -856,7 +1167,9 @@ app.post(
       const summary =
         body.summary.trim();
 
-      if (summary.length < 5) {
+      if (
+        summary.length < 5
+      ) {
         return validationError(
           res,
           "Ticket Summary must contain at least 5 characters.",
@@ -867,7 +1180,9 @@ app.post(
         );
       }
 
-      if (summary.length > 150) {
+      if (
+        summary.length > 150
+      ) {
         return validationError(
           res,
           "Ticket Summary must not exceed 150 characters.",
@@ -884,7 +1199,7 @@ app.post(
 
       if (
         typeof body.description !==
-        "string"
+          "string"
       ) {
         return validationError(
           res,
@@ -900,7 +1215,8 @@ app.post(
         body.description.trim();
 
       if (
-        description.length < 10
+        description.length <
+        10
       ) {
         return validationError(
           res,
@@ -913,7 +1229,8 @@ app.post(
       }
 
       if (
-        description.length > 5000
+        description.length >
+        5000
       ) {
         return validationError(
           res,
@@ -950,7 +1267,7 @@ app.post(
         body.requestedPriority as RequestedPriority;
 
       // ------------------------------------------------------
-      // Duplicate submission
+      // Duplicate submission protection
       // ------------------------------------------------------
 
       const duplicateTicket =
@@ -958,25 +1275,30 @@ app.post(
           where: {
             clientSubmissionId,
           },
+
           select: {
             id: true,
-            ticketNumber: true,
+            ticketNumber:
+              true,
           },
         });
 
       if (duplicateTicket) {
-        return res.status(409).json({
-          error: {
-            code:
-              "DUPLICATE_SUBMISSION",
-            message:
-              "This Ticket submission has already been processed.",
-          },
-        });
+        return res
+          .status(409)
+          .json({
+            error: {
+              code:
+                "DUPLICATE_SUBMISSION",
+
+              message:
+                "This Ticket submission has already been processed.",
+            },
+          });
       }
 
       // ------------------------------------------------------
-      // Active reference validation
+      // Validate active reference data
       // ------------------------------------------------------
 
       const [
@@ -984,35 +1306,50 @@ app.post(
         category,
         relatedSystem,
       ] = await Promise.all([
-        prisma.requesterUser.findFirst({
-          where: {
-            id: body.requesterId,
-            isActive: true,
-          },
-          select: {
-            id: true,
-          },
-        }),
+        prisma.requesterUser.findFirst(
+          {
+            where: {
+              id:
+                body.requesterId,
+
+              isActive:
+                true,
+            },
+
+            select: {
+              id: true,
+            },
+          }
+        ),
 
         prisma.category.findFirst({
           where: {
-            id: body.categoryId,
+            id:
+              body.categoryId,
+
             isActive: true,
           },
+
           select: {
             id: true,
           },
         }),
 
-        prisma.relatedSystem.findFirst({
-          where: {
-            id: body.relatedSystemId,
-            isActive: true,
-          },
-          select: {
-            id: true,
-          },
-        }),
+        prisma.relatedSystem.findFirst(
+          {
+            where: {
+              id:
+                body.relatedSystemId,
+
+              isActive:
+                true,
+            },
+
+            select: {
+              id: true,
+            },
+          }
+        ),
       ]);
 
       if (!requester) {
@@ -1059,31 +1396,59 @@ app.post(
         await prisma.ticket.create({
           data: {
             ticketNumber,
+
             clientSubmissionId,
+
             requesterId:
               body.requesterId,
+
             categoryId:
               body.categoryId,
+
             relatedSystemId:
               body.relatedSystemId,
+
             summary,
+
             requestedPriority,
+
             description,
-            currentStatus: "NEW",
+
+            currentStatus:
+              "NEW",
           },
 
           select: {
             id: true,
-            ticketNumber: true,
-            clientSubmissionId: true,
-            requesterId: true,
-            categoryId: true,
-            relatedSystemId: true,
+
+            ticketNumber:
+              true,
+
+            clientSubmissionId:
+              true,
+
+            requesterId:
+              true,
+
+            categoryId:
+              true,
+
+            relatedSystemId:
+              true,
+
             summary: true,
-            requestedPriority: true,
-            description: true,
-            currentStatus: true,
+
+            requestedPriority:
+              true,
+
+            description:
+              true,
+
+            currentStatus:
+              true,
+
             createdAt: true,
+
             updatedAt: true,
           },
         });
@@ -1099,16 +1464,24 @@ app.post(
         error
       );
 
-      return res.status(500).json({
-        error: {
-          code: "INTERNAL_ERROR",
-          message:
-            "The Ticket could not be created. Please try again.",
-        },
-      });
+      return res
+        .status(500)
+        .json({
+          error: {
+            code:
+              "INTERNAL_ERROR",
+
+            message:
+              "The Ticket could not be created. Please try again.",
+          },
+        });
     }
   }
 );
+
+// ============================================================
+// Exports
+// ============================================================
 
 export { app };
 export default app;
