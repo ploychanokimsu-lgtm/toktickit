@@ -4,10 +4,23 @@ import express, {
   type Response,
 } from "express";
 
+import multer from "multer";
+
 import {
   Prisma,
   type RequestedPriority,
 } from "@prisma/client";
+
+import {
+  access,
+  mkdir,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
+
+import { randomUUID } from "node:crypto";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { getPrisma } from "./prisma.js";
 
@@ -19,7 +32,25 @@ app.use(express.json());
 const prisma = getPrisma();
 
 // ============================================================
-// Constants / Types
+// Paths
+// ============================================================
+
+const CURRENT_FILE =
+  fileURLToPath(import.meta.url);
+
+const SERVER_ROOT = path.resolve(
+  path.dirname(CURRENT_FILE),
+  ".."
+);
+
+const ATTACHMENT_STORAGE_DIR =
+  path.join(
+    SERVER_ROOT,
+    "uploads"
+  );
+
+// ============================================================
+// Constants
 // ============================================================
 
 const ALLOWED_PRIORITIES = [
@@ -41,6 +72,50 @@ const ALLOWED_SORT_FIELDS = [
   "summary",
   "requestedPriority",
 ] as const;
+
+const MAX_ATTACHMENT_BYTES =
+  5 * 1024 * 1024;
+
+const MAX_ACTIVE_ATTACHMENTS = 5;
+
+const ALLOWED_ATTACHMENT_TYPES: Record<
+  string,
+  string[]
+> = {
+  "image/jpeg": [
+    ".jpg",
+    ".jpeg",
+  ],
+
+  "image/png": [
+    ".png",
+  ],
+
+  "image/webp": [
+    ".webp",
+  ],
+
+  "application/pdf": [
+    ".pdf",
+  ],
+};
+
+const attachmentUpload =
+  multer({
+    storage:
+      multer.memoryStorage(),
+
+    limits: {
+      fileSize:
+        MAX_ATTACHMENT_BYTES,
+
+      files: 1,
+    },
+  });
+
+// ============================================================
+// Types
+// ============================================================
 
 type AllowedPriority =
   (typeof ALLOWED_PRIORITIES)[number];
@@ -67,15 +142,20 @@ interface RequesterContextUser {
 type RequesterContextResult =
   | {
       ok: true;
-      requester: RequesterContextUser;
+
+      requester:
+        RequesterContextUser;
     }
   | {
       ok: false;
+
       error: {
         status: number;
+
         code:
           | "REQUESTER_CONTEXT_REQUIRED"
           | "INVALID_REQUESTER_CONTEXT";
+
         message: string;
       };
     };
@@ -87,12 +167,18 @@ type RequesterContextResult =
 function validationError(
   res: Response,
   message: string,
-  fields?: Record<string, string>
+  fields?: Record<
+    string,
+    string
+  >
 ) {
   return res.status(400).json({
     error: {
-      code: "VALIDATION_ERROR",
+      code:
+        "VALIDATION_ERROR",
+
       message,
+
       ...(fields
         ? {
             fields,
@@ -105,7 +191,8 @@ function validationError(
 function queryString(
   value: unknown
 ): string | undefined {
-  return typeof value === "string"
+  return typeof value ===
+    "string"
     ? value
     : undefined;
 }
@@ -113,10 +200,13 @@ function queryString(
 function positiveInteger(
   value: string
 ): number | null {
-  const parsed = Number(value);
+  const parsed =
+    Number(value);
 
   if (
-    !Number.isInteger(parsed) ||
+    !Number.isInteger(
+      parsed
+    ) ||
     parsed <= 0
   ) {
     return null;
@@ -128,17 +218,21 @@ function positiveInteger(
 async function getActiveRequesterContext(
   req: Request
 ): Promise<RequesterContextResult> {
-  const rawId = req.header(
-    "X-Development-Requester-Id"
-  );
+  const rawId =
+    req.header(
+      "X-Development-Requester-Id"
+    );
 
   if (!rawId) {
     return {
       ok: false,
+
       error: {
         status: 400,
+
         code:
           "REQUESTER_CONTEXT_REQUIRED",
+
         message:
           "A Development Requester context is required.",
       },
@@ -148,13 +242,18 @@ async function getActiveRequesterContext(
   const requesterId =
     positiveInteger(rawId);
 
-  if (requesterId === null) {
+  if (
+    requesterId === null
+  ) {
     return {
       ok: false,
+
       error: {
         status: 400,
+
         code:
           "INVALID_REQUESTER_CONTEXT",
+
         message:
           "The Development Requester context is invalid.",
       },
@@ -178,10 +277,13 @@ async function getActiveRequesterContext(
   if (!requester) {
     return {
       ok: false,
+
       error: {
         status: 400,
+
         code:
           "INVALID_REQUESTER_CONTEXT",
+
         message:
           "The Development Requester context is invalid or inactive.",
       },
@@ -196,26 +298,33 @@ async function getActiveRequesterContext(
 
 function buildOrderBy(
   sortBy: AllowedSortField,
-  sortOrder: "asc" | "desc"
+
+  sortOrder:
+    | "asc"
+    | "desc"
 ): Prisma.TicketOrderByWithRelationInput[] {
-  let primary: Prisma.TicketOrderByWithRelationInput;
+  let primary:
+    Prisma.TicketOrderByWithRelationInput;
 
   switch (sortBy) {
     case "createdAt":
       primary = {
-        createdAt: sortOrder,
+        createdAt:
+          sortOrder,
       };
       break;
 
     case "ticketNumber":
       primary = {
-        ticketNumber: sortOrder,
+        ticketNumber:
+          sortOrder,
       };
       break;
 
     case "summary":
       primary = {
-        summary: sortOrder,
+        summary:
+          sortOrder,
       };
       break;
 
@@ -229,13 +338,15 @@ function buildOrderBy(
     case "updatedAt":
     default:
       primary = {
-        updatedAt: sortOrder,
+        updatedAt:
+          sortOrder,
       };
       break;
   }
 
   return [
     primary,
+
     {
       id: sortOrder,
     },
@@ -258,11 +369,116 @@ async function generateTicketNumber(): Promise<string> {
     });
 
   const nextNumber =
-    (latestTicket?.id ?? 0) + 1;
+    (latestTicket?.id ??
+      0) + 1;
 
   return `TKT-${year}-${String(
     nextNumber
   ).padStart(6, "0")}`;
+}
+
+function runAttachmentUpload(
+  req: Request,
+  res: Response
+): Promise<
+  Express.Multer.File | null
+> {
+  return new Promise(
+    (
+      resolve,
+      reject
+    ) => {
+      attachmentUpload.single(
+        "file"
+      )(
+        req,
+        res,
+        (error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve(
+            req.file ?? null
+          );
+        }
+      );
+    }
+  );
+}
+
+function isAllowedAttachment(
+  file:
+    Express.Multer.File
+): boolean {
+  const extension =
+    path
+      .extname(
+        file.originalname
+      )
+      .toLowerCase();
+
+  const allowedExtensions =
+    ALLOWED_ATTACHMENT_TYPES[
+      file.mimetype
+    ];
+
+  if (
+    !allowedExtensions
+  ) {
+    return false;
+  }
+
+  return (
+    allowedExtensions.includes(
+      extension
+    )
+  );
+}
+
+function safeOriginalFilename(
+  filename: string
+): string {
+  const basename =
+    path.basename(filename);
+
+  const cleaned =
+    basename
+      .replace(
+        /[\u0000-\u001f\u007f]/g,
+        ""
+      )
+      .trim();
+
+  return (
+    cleaned ||
+    "attachment"
+  ).slice(0, 255);
+}
+
+function multerErrorCode(
+  error: unknown
+): string | null {
+  if (
+    typeof error !==
+      "object" ||
+    error === null ||
+    !("code" in error)
+  ) {
+    return null;
+  }
+
+  const code = (
+    error as {
+      code?: unknown;
+    }
+  ).code;
+
+  return typeof code ===
+    "string"
+    ? code
+    : null;
 }
 
 // ============================================================
@@ -271,14 +487,19 @@ async function generateTicketNumber(): Promise<string> {
 
 app.get(
   "/api/health",
+
   (
     _req: Request,
     res: Response
   ) => {
-    res.status(200).json({
-      status: "ok",
-      service: "TokTickIT API",
-    });
+    return res
+      .status(200)
+      .json({
+        status: "ok",
+
+        service:
+          "TokTickIT API",
+      });
   }
 );
 
@@ -288,6 +509,7 @@ app.get(
 
 app.get(
   "/api/categories",
+
   async (
     _req: Request,
     res: Response
@@ -296,7 +518,8 @@ app.get(
       const categories =
         await prisma.category.findMany({
           where: {
-            isActive: true,
+            isActive:
+              true,
           },
 
           select: {
@@ -309,7 +532,7 @@ app.get(
           },
         });
 
-      res
+      return res
         .status(200)
         .json(categories);
     } catch (error) {
@@ -318,13 +541,17 @@ app.get(
         error
       );
 
-      res.status(500).json({
-        error: {
-          code: "INTERNAL_ERROR",
-          message:
-            "Failed to fetch Categories.",
-        },
-      });
+      return res
+        .status(500)
+        .json({
+          error: {
+            code:
+              "INTERNAL_ERROR",
+
+            message:
+              "Failed to fetch Categories.",
+          },
+        });
     }
   }
 );
@@ -335,6 +562,7 @@ app.get(
 
 app.get(
   "/api/requesters",
+
   async (
     _req: Request,
     res: Response
@@ -343,7 +571,8 @@ app.get(
       const requesters =
         await prisma.requesterUser.findMany({
           where: {
-            isActive: true,
+            isActive:
+              true,
           },
 
           select: {
@@ -357,22 +586,28 @@ app.get(
           },
         });
 
-      res.status(200).json({
-        requesters,
-      });
+      return res
+        .status(200)
+        .json({
+          requesters,
+        });
     } catch (error) {
       console.error(
         "Failed to fetch Development Requesters:",
         error
       );
 
-      res.status(500).json({
-        error: {
-          code: "INTERNAL_ERROR",
-          message:
-            "Failed to fetch Development Requesters.",
-        },
-      });
+      return res
+        .status(500)
+        .json({
+          error: {
+            code:
+              "INTERNAL_ERROR",
+
+            message:
+              "Failed to fetch Development Requesters.",
+          },
+        });
     }
   }
 );
@@ -383,6 +618,7 @@ app.get(
 
 app.get(
   "/api/related-systems",
+
   async (
     _req: Request,
     res: Response
@@ -391,7 +627,8 @@ app.get(
       const relatedSystems =
         await prisma.relatedSystem.findMany({
           where: {
-            isActive: true,
+            isActive:
+              true,
           },
 
           select: {
@@ -404,22 +641,28 @@ app.get(
           },
         });
 
-      res.status(200).json({
-        relatedSystems,
-      });
+      return res
+        .status(200)
+        .json({
+          relatedSystems,
+        });
     } catch (error) {
       console.error(
         "Failed to fetch Related Systems:",
         error
       );
 
-      res.status(500).json({
-        error: {
-          code: "INTERNAL_ERROR",
-          message:
-            "Failed to fetch Related Systems.",
-        },
-      });
+      return res
+        .status(500)
+        .json({
+          error: {
+            code:
+              "INTERNAL_ERROR",
+
+            message:
+              "Failed to fetch Related Systems.",
+          },
+        });
     }
   }
 );
@@ -431,45 +674,41 @@ app.get(
 
 app.get(
   "/api/tickets",
+
   async (
     req: Request,
     res: Response
   ) => {
     try {
-      // ------------------------------------------------------
-      // Requester context / ownership
-      // ------------------------------------------------------
-
       const requesterResult =
         await getActiveRequesterContext(
           req
         );
 
-      if (!requesterResult.ok) {
+      if (
+        !requesterResult.ok
+      ) {
         return res
           .status(
-            requesterResult.error
-              .status
+            requesterResult
+              .error.status
           )
           .json({
             error: {
               code:
-                requesterResult.error
-                  .code,
+                requesterResult
+                  .error.code,
 
               message:
-                requesterResult.error
-                  .message,
+                requesterResult
+                  .error.message,
             },
           });
       }
 
       const requesterId =
-        requesterResult.requester.id;
-
-      // ------------------------------------------------------
-      // Query parameters
-      // ------------------------------------------------------
+        requesterResult
+          .requester.id;
 
       const search =
         queryString(
@@ -493,7 +732,8 @@ app.get(
 
       const relatedSystemIdRaw =
         queryString(
-          req.query.relatedSystemId
+          req.query
+            .relatedSystemId
         );
 
       const requestedPriorityRaw =
@@ -518,12 +758,10 @@ app.get(
       const pageSize =
         Number(pageSizeRaw);
 
-      // ------------------------------------------------------
-      // Pagination validation
-      // ------------------------------------------------------
-
       if (
-        !Number.isInteger(page) ||
+        !Number.isInteger(
+          page
+        ) ||
         page < 1
       ) {
         return validationError(
@@ -546,10 +784,6 @@ app.get(
         );
       }
 
-      // ------------------------------------------------------
-      // Category filter
-      // ------------------------------------------------------
-
       let categoryId:
         | number
         | undefined;
@@ -563,19 +797,18 @@ app.get(
             categoryIdRaw
           );
 
-        if (parsed === null) {
+        if (
+          parsed === null
+        ) {
           return validationError(
             res,
             "Category filter is invalid."
           );
         }
 
-        categoryId = parsed;
+        categoryId =
+          parsed;
       }
-
-      // ------------------------------------------------------
-      // Related System filter
-      // ------------------------------------------------------
 
       let relatedSystemId:
         | number
@@ -590,7 +823,9 @@ app.get(
             relatedSystemIdRaw
           );
 
-        if (parsed === null) {
+        if (
+          parsed === null
+        ) {
           return validationError(
             res,
             "Related System filter is invalid."
@@ -600,10 +835,6 @@ app.get(
         relatedSystemId =
           parsed;
       }
-
-      // ------------------------------------------------------
-      // Priority filter
-      // ------------------------------------------------------
 
       let requestedPriority:
         | RequestedPriority
@@ -628,10 +859,6 @@ app.get(
           requestedPriorityRaw as RequestedPriority;
       }
 
-      // ------------------------------------------------------
-      // Sort validation
-      // ------------------------------------------------------
-
       if (
         !ALLOWED_SORT_FIELDS.includes(
           sortByRaw as AllowedSortField
@@ -644,8 +871,10 @@ app.get(
       }
 
       if (
-        sortOrderRaw !== "asc" &&
-        sortOrderRaw !== "desc"
+        sortOrderRaw !==
+          "asc" &&
+        sortOrderRaw !==
+          "desc"
       ) {
         return validationError(
           res,
@@ -661,11 +890,8 @@ app.get(
           | "asc"
           | "desc";
 
-      // ------------------------------------------------------
-      // Ownership-safe WHERE clause
-      // ------------------------------------------------------
-
-      const where: Prisma.TicketWhereInput =
+      const where:
+        Prisma.TicketWhereInput =
         {
           requesterId,
 
@@ -697,6 +923,7 @@ app.get(
                     ticketNumber: {
                       contains:
                         search,
+
                       mode:
                         "insensitive",
                     },
@@ -706,6 +933,7 @@ app.get(
                     summary: {
                       contains:
                         search,
+
                       mode:
                         "insensitive",
                     },
@@ -721,10 +949,6 @@ app.get(
           sortOrder
         );
 
-      // ------------------------------------------------------
-      // Query Tickets + count
-      // ------------------------------------------------------
-
       const [
         tickets,
         totalItems,
@@ -734,14 +958,14 @@ app.get(
             prisma.ticket.findMany(
               {
                 where,
-
                 orderBy,
 
                 skip:
                   (page - 1) *
                   pageSize,
 
-                take: pageSize,
+                take:
+                  pageSize,
 
                 select: {
                   id: true,
@@ -838,67 +1062,875 @@ app.get(
 );
 
 // ============================================================
-// Requester Ticket Detail
-// GET /api/tickets/:ticketId
+// Attachment Metadata
+// GET /api/tickets/:ticketId/attachments
 // ============================================================
 
 app.get(
-  "/api/tickets/:ticketId",
+  "/api/tickets/:ticketId/attachments",
+
   async (
     req: Request,
     res: Response
   ) => {
     try {
-      // ------------------------------------------------------
-      // Requester context
-      // ------------------------------------------------------
-
       const requesterResult =
         await getActiveRequesterContext(
           req
         );
 
-      if (!requesterResult.ok) {
+      if (
+        !requesterResult.ok
+      ) {
         return res
           .status(
-            requesterResult.error
-              .status
+            requesterResult
+              .error.status
           )
           .json({
             error: {
               code:
-                requesterResult.error
-                  .code,
+                requesterResult
+                  .error.code,
 
               message:
-                requesterResult.error
-                  .message,
+                requesterResult
+                  .error.message,
             },
           });
       }
 
-      // ------------------------------------------------------
-      // Ticket ID validation
-      // ------------------------------------------------------
-
-      const rawTicketId =
-        req.params.ticketId;
-
       const ticketId =
         positiveInteger(
-          rawTicketId
+          req.params.ticketId
         );
 
-      if (ticketId === null) {
+      if (
+        ticketId === null
+      ) {
         return validationError(
           res,
           "Ticket ID is invalid."
         );
       }
 
-      // ------------------------------------------------------
-      // Ownership-enforced retrieval
-      // ------------------------------------------------------
+      const ticket =
+        await prisma.ticket.findFirst({
+          where: {
+            id: ticketId,
+
+            requesterId:
+              requesterResult
+                .requester.id,
+          },
+
+          select: {
+            id: true,
+          },
+        });
+
+      if (!ticket) {
+        return res
+          .status(404)
+          .json({
+            error: {
+              code:
+                "TICKET_NOT_FOUND",
+
+              message:
+                "Ticket not found.",
+            },
+          });
+      }
+
+      const attachments =
+        await prisma.attachment.findMany({
+          where: {
+            ticketId,
+          },
+
+          orderBy: {
+            uploadedAt:
+              "asc",
+          },
+
+          select: {
+            id: true,
+
+            originalFilename:
+              true,
+
+            mimeType: true,
+
+            sizeBytes: true,
+
+            isRemoved: true,
+
+            uploadedAt: true,
+
+            removedAt: true,
+
+            removalReason:
+              true,
+          },
+        });
+
+      return res
+        .status(200)
+        .json({
+          attachments,
+        });
+    } catch (error) {
+      console.error(
+        "Failed to fetch Attachments:",
+        error
+      );
+
+      return res
+        .status(500)
+        .json({
+          error: {
+            code:
+              "INTERNAL_ERROR",
+
+            message:
+              "Unable to load Attachments. Please try again.",
+          },
+        });
+    }
+  }
+);
+
+// ============================================================
+// Upload Attachment
+// POST /api/tickets/:ticketId/attachments
+// ============================================================
+
+app.post(
+  "/api/tickets/:ticketId/attachments",
+
+  async (
+    req: Request,
+    res: Response
+  ) => {
+    try {
+      const requesterResult =
+        await getActiveRequesterContext(
+          req
+        );
+
+      if (
+        !requesterResult.ok
+      ) {
+        return res
+          .status(
+            requesterResult
+              .error.status
+          )
+          .json({
+            error: {
+              code:
+                requesterResult
+                  .error.code,
+
+              message:
+                requesterResult
+                  .error.message,
+            },
+          });
+      }
+
+      const ticketId =
+        positiveInteger(
+          req.params.ticketId
+        );
+
+      if (
+        ticketId === null
+      ) {
+        return validationError(
+          res,
+          "Ticket ID is invalid."
+        );
+      }
+
+      const ticket =
+        await prisma.ticket.findFirst({
+          where: {
+            id: ticketId,
+
+            requesterId:
+              requesterResult
+                .requester.id,
+          },
+
+          select: {
+            id: true,
+          },
+        });
+
+      if (!ticket) {
+        return res
+          .status(404)
+          .json({
+            error: {
+              code:
+                "TICKET_NOT_FOUND",
+
+              message:
+                "Ticket not found.",
+            },
+          });
+      }
+
+      const activeCount =
+        await prisma.attachment.count({
+          where: {
+            ticketId,
+            isRemoved: false,
+          },
+        });
+
+      if (
+        activeCount >=
+        MAX_ACTIVE_ATTACHMENTS
+      ) {
+        return res
+          .status(409)
+          .json({
+            error: {
+              code:
+                "ATTACHMENT_LIMIT_REACHED",
+
+              message:
+                "A Ticket may have a maximum of five active Attachments.",
+            },
+          });
+      }
+
+      let file:
+        | Express.Multer.File
+        | null;
+
+      try {
+        file =
+          await runAttachmentUpload(
+            req,
+            res
+          );
+      } catch (
+        uploadError
+      ) {
+        const code =
+          multerErrorCode(
+            uploadError
+          );
+
+        if (
+          code ===
+          "LIMIT_FILE_SIZE"
+        ) {
+          return res
+            .status(413)
+            .json({
+              error: {
+                code:
+                  "ATTACHMENT_TOO_LARGE",
+
+                message:
+                  "Attachment size must not exceed 5 MB.",
+              },
+            });
+        }
+
+        return res
+          .status(400)
+          .json({
+            error: {
+              code:
+                "INVALID_ATTACHMENT_UPLOAD",
+
+              message:
+                "The Attachment upload is invalid.",
+            },
+          });
+      }
+
+      if (!file) {
+        return validationError(
+          res,
+          "An Attachment file is required.",
+          {
+            file:
+              "Select a file to upload.",
+          }
+        );
+      }
+
+      if (
+        !isAllowedAttachment(
+          file
+        )
+      ) {
+        return res
+          .status(415)
+          .json({
+            error: {
+              code:
+                "UNSUPPORTED_ATTACHMENT_TYPE",
+
+              message:
+                "Only JPG, JPEG, PNG, WEBP, and PDF files are allowed.",
+            },
+          });
+      }
+
+      const extension =
+        path
+          .extname(
+            file.originalname
+          )
+          .toLowerCase();
+
+      const storedFilename =
+        `${randomUUID()}${extension}`;
+
+      const storagePath =
+        path.posix.join(
+          "uploads",
+          storedFilename
+        );
+
+      const absolutePath =
+        path.join(
+          ATTACHMENT_STORAGE_DIR,
+          storedFilename
+        );
+
+      await mkdir(
+        ATTACHMENT_STORAGE_DIR,
+        {
+          recursive:
+            true,
+        }
+      );
+
+      await writeFile(
+        absolutePath,
+        file.buffer
+      );
+
+      try {
+        const attachment =
+          await prisma.attachment.create({
+            data: {
+              ticketId,
+
+              originalFilename:
+                safeOriginalFilename(
+                  file.originalname
+                ),
+
+              storedFilename,
+
+              mimeType:
+                file.mimetype,
+
+              sizeBytes:
+                file.size,
+
+              storagePath,
+
+              isRemoved:
+                false,
+            },
+
+            select: {
+              id: true,
+
+              originalFilename:
+                true,
+
+              mimeType: true,
+
+              sizeBytes: true,
+
+              isRemoved: true,
+
+              uploadedAt: true,
+
+              removedAt: true,
+
+              removalReason:
+                true,
+            },
+          });
+
+        return res
+          .status(201)
+          .json({
+            attachment,
+          });
+      } catch (
+        databaseError
+      ) {
+        await unlink(
+          absolutePath
+        ).catch(
+          () => undefined
+        );
+
+        throw databaseError;
+      }
+    } catch (error) {
+      console.error(
+        "Failed to upload Attachment:",
+        error
+      );
+
+      return res
+        .status(500)
+        .json({
+          error: {
+            code:
+              "INTERNAL_ERROR",
+
+            message:
+              "The Attachment could not be uploaded. Please try again.",
+          },
+        });
+    }
+  }
+);
+
+// ============================================================
+// Download Attachment
+// GET /api/attachments/:attachmentId/download
+// ============================================================
+
+app.get(
+  "/api/attachments/:attachmentId/download",
+
+  async (
+    req: Request,
+    res: Response
+  ) => {
+    try {
+      const requesterResult =
+        await getActiveRequesterContext(
+          req
+        );
+
+      if (
+        !requesterResult.ok
+      ) {
+        return res
+          .status(
+            requesterResult
+              .error.status
+          )
+          .json({
+            error: {
+              code:
+                requesterResult
+                  .error.code,
+
+              message:
+                requesterResult
+                  .error.message,
+            },
+          });
+      }
+
+      const attachmentId =
+        positiveInteger(
+          req.params
+            .attachmentId
+        );
+
+      if (
+        attachmentId ===
+        null
+      ) {
+        return validationError(
+          res,
+          "Attachment ID is invalid."
+        );
+      }
+
+      const attachment =
+        await prisma.attachment.findFirst({
+          where: {
+            id:
+              attachmentId,
+
+            isRemoved:
+              false,
+
+            ticket: {
+              requesterId:
+                requesterResult
+                  .requester.id,
+            },
+          },
+
+          select: {
+            id: true,
+
+            originalFilename:
+              true,
+
+            mimeType: true,
+
+            storagePath:
+              true,
+          },
+        });
+
+      /*
+       * Missing, removed and
+       * non-owned files all use
+       * the same safe 404.
+       */
+      if (!attachment) {
+        return res
+          .status(404)
+          .json({
+            error: {
+              code:
+                "ATTACHMENT_NOT_FOUND",
+
+              message:
+                "Attachment not found.",
+            },
+          });
+      }
+
+      const absolutePath =
+        path.resolve(
+          SERVER_ROOT,
+          attachment.storagePath
+        );
+
+      try {
+        await access(
+          absolutePath
+        );
+      } catch {
+        return res
+          .status(404)
+          .json({
+            error: {
+              code:
+                "ATTACHMENT_NOT_FOUND",
+
+              message:
+                "Attachment not found.",
+            },
+          });
+      }
+
+      res.setHeader(
+        "Content-Type",
+        attachment.mimeType
+      );
+
+      return res.download(
+        absolutePath,
+        attachment.originalFilename
+      );
+    } catch (error) {
+      console.error(
+        "Failed to download Attachment:",
+        error
+      );
+
+      return res
+        .status(500)
+        .json({
+          error: {
+            code:
+              "INTERNAL_ERROR",
+
+            message:
+              "The Attachment could not be downloaded. Please try again.",
+          },
+        });
+    }
+  }
+);
+
+// ============================================================
+// Soft Remove Attachment
+// DELETE /api/attachments/:attachmentId
+// ============================================================
+
+app.delete(
+  "/api/attachments/:attachmentId",
+
+  async (
+    req: Request,
+    res: Response
+  ) => {
+    try {
+      const requesterResult =
+        await getActiveRequesterContext(
+          req
+        );
+
+      if (
+        !requesterResult.ok
+      ) {
+        return res
+          .status(
+            requesterResult
+              .error.status
+          )
+          .json({
+            error: {
+              code:
+                requesterResult
+                  .error.code,
+
+              message:
+                requesterResult
+                  .error.message,
+            },
+          });
+      }
+
+      const attachmentId =
+        positiveInteger(
+          req.params
+            .attachmentId
+        );
+
+      if (
+        attachmentId ===
+        null
+      ) {
+        return validationError(
+          res,
+          "Attachment ID is invalid."
+        );
+      }
+
+      const reasonRaw = (
+        req.body as {
+          reason?: unknown;
+        }
+      )?.reason;
+
+      if (
+        typeof reasonRaw !==
+        "string"
+      ) {
+        return validationError(
+          res,
+          "A removal reason is required.",
+          {
+            reason:
+              "Removal reason is required.",
+          }
+        );
+      }
+
+      const reason =
+        reasonRaw.trim();
+
+      if (
+        reason.length < 3
+      ) {
+        return validationError(
+          res,
+          "Removal reason must contain at least 3 characters.",
+          {
+            reason:
+              "Removal reason must contain at least 3 characters.",
+          }
+        );
+      }
+
+      if (
+        reason.length > 200
+      ) {
+        return validationError(
+          res,
+          "Removal reason must not exceed 200 characters.",
+          {
+            reason:
+              "Removal reason must not exceed 200 characters.",
+          }
+        );
+      }
+
+      const attachment =
+        await prisma.attachment.findFirst({
+          where: {
+            id:
+              attachmentId,
+
+            ticket: {
+              requesterId:
+                requesterResult
+                  .requester.id,
+            },
+          },
+
+          select: {
+            id: true,
+            isRemoved: true,
+          },
+        });
+
+      if (!attachment) {
+        return res
+          .status(404)
+          .json({
+            error: {
+              code:
+                "ATTACHMENT_NOT_FOUND",
+
+              message:
+                "Attachment not found.",
+            },
+          });
+      }
+
+      if (
+        attachment.isRemoved
+      ) {
+        return res
+          .status(409)
+          .json({
+            error: {
+              code:
+                "ATTACHMENT_ALREADY_REMOVED",
+
+              message:
+                "Attachment has already been removed.",
+            },
+          });
+      }
+
+      const removedAttachment =
+        await prisma.attachment.update({
+          where: {
+            id:
+              attachmentId,
+          },
+
+          data: {
+            isRemoved:
+              true,
+
+            removedAt:
+              new Date(),
+
+            removalReason:
+              reason,
+          },
+
+          select: {
+            id: true,
+
+            originalFilename:
+              true,
+
+            mimeType: true,
+
+            sizeBytes: true,
+
+            isRemoved: true,
+
+            uploadedAt: true,
+
+            removedAt: true,
+
+            removalReason:
+              true,
+          },
+        });
+
+      return res
+        .status(200)
+        .json({
+          attachment:
+            removedAttachment,
+        });
+    } catch (error) {
+      console.error(
+        "Failed to remove Attachment:",
+        error
+      );
+
+      return res
+        .status(500)
+        .json({
+          error: {
+            code:
+              "INTERNAL_ERROR",
+
+            message:
+              "The Attachment could not be removed. Please try again.",
+          },
+        });
+    }
+  }
+);
+
+// ============================================================
+// Ticket Detail
+// GET /api/tickets/:ticketId
+// ============================================================
+
+app.get(
+  "/api/tickets/:ticketId",
+
+  async (
+    req: Request,
+    res: Response
+  ) => {
+    try {
+      const requesterResult =
+        await getActiveRequesterContext(
+          req
+        );
+
+      if (
+        !requesterResult.ok
+      ) {
+        return res
+          .status(
+            requesterResult
+              .error.status
+          )
+          .json({
+            error: {
+              code:
+                requesterResult
+                  .error.code,
+
+              message:
+                requesterResult
+                  .error.message,
+            },
+          });
+      }
+
+      const ticketId =
+        positiveInteger(
+          req.params.ticketId
+        );
+
+      if (
+        ticketId === null
+      ) {
+        return validationError(
+          res,
+          "Ticket ID is invalid."
+        );
+      }
 
       const ticket =
         await prisma.ticket.findFirst({
@@ -997,11 +2029,6 @@ app.get(
           },
         });
 
-      // ------------------------------------------------------
-      // Safe ownership failure:
-      // missing and non-owned Tickets return identical 404
-      // ------------------------------------------------------
-
       if (!ticket) {
         return res
           .status(404)
@@ -1049,6 +2076,7 @@ app.get(
 
 app.post(
   "/api/tickets",
+
   async (
     req: Request,
     res: Response
@@ -1056,10 +2084,6 @@ app.post(
     try {
       const body =
         req.body as CreateTicketBody;
-
-      // ------------------------------------------------------
-      // Client submission ID
-      // ------------------------------------------------------
 
       if (
         typeof body.clientSubmissionId !==
@@ -1080,17 +2104,14 @@ app.post(
       const clientSubmissionId =
         body.clientSubmissionId.trim();
 
-      // ------------------------------------------------------
-      // Requester
-      // ------------------------------------------------------
-
       if (
         typeof body.requesterId !==
           "number" ||
         !Number.isInteger(
           body.requesterId
         ) ||
-        body.requesterId <= 0
+        body.requesterId <=
+          0
       ) {
         return validationError(
           res,
@@ -1102,17 +2123,14 @@ app.post(
         );
       }
 
-      // ------------------------------------------------------
-      // Category
-      // ------------------------------------------------------
-
       if (
         typeof body.categoryId !==
           "number" ||
         !Number.isInteger(
           body.categoryId
         ) ||
-        body.categoryId <= 0
+        body.categoryId <=
+          0
       ) {
         return validationError(
           res,
@@ -1124,17 +2142,14 @@ app.post(
         );
       }
 
-      // ------------------------------------------------------
-      // Related System
-      // ------------------------------------------------------
-
       if (
         typeof body.relatedSystemId !==
           "number" ||
         !Number.isInteger(
           body.relatedSystemId
         ) ||
-        body.relatedSystemId <= 0
+        body.relatedSystemId <=
+          0
       ) {
         return validationError(
           res,
@@ -1145,10 +2160,6 @@ app.post(
           }
         );
       }
-
-      // ------------------------------------------------------
-      // Summary
-      // ------------------------------------------------------
 
       if (
         typeof body.summary !==
@@ -1193,13 +2204,9 @@ app.post(
         );
       }
 
-      // ------------------------------------------------------
-      // Description
-      // ------------------------------------------------------
-
       if (
         typeof body.description !==
-          "string"
+        "string"
       ) {
         return validationError(
           res,
@@ -1242,10 +2249,6 @@ app.post(
         );
       }
 
-      // ------------------------------------------------------
-      // Requested Priority
-      // ------------------------------------------------------
-
       if (
         typeof body.requestedPriority !==
           "string" ||
@@ -1266,10 +2269,6 @@ app.post(
       const requestedPriority =
         body.requestedPriority as RequestedPriority;
 
-      // ------------------------------------------------------
-      // Duplicate submission protection
-      // ------------------------------------------------------
-
       const duplicateTicket =
         await prisma.ticket.findUnique({
           where: {
@@ -1283,7 +2282,9 @@ app.post(
           },
         });
 
-      if (duplicateTicket) {
+      if (
+        duplicateTicket
+      ) {
         return res
           .status(409)
           .json({
@@ -1297,17 +2298,13 @@ app.post(
           });
       }
 
-      // ------------------------------------------------------
-      // Validate active reference data
-      // ------------------------------------------------------
-
       const [
         requester,
         category,
         relatedSystem,
-      ] = await Promise.all([
-        prisma.requesterUser.findFirst(
-          {
+      ] =
+        await Promise.all([
+          prisma.requesterUser.findFirst({
             where: {
               id:
                 body.requesterId,
@@ -1319,24 +2316,23 @@ app.post(
             select: {
               id: true,
             },
-          }
-        ),
+          }),
 
-        prisma.category.findFirst({
-          where: {
-            id:
-              body.categoryId,
+          prisma.category.findFirst({
+            where: {
+              id:
+                body.categoryId,
 
-            isActive: true,
-          },
+              isActive:
+                true,
+            },
 
-          select: {
-            id: true,
-          },
-        }),
+            select: {
+              id: true,
+            },
+          }),
 
-        prisma.relatedSystem.findFirst(
-          {
+          prisma.relatedSystem.findFirst({
             where: {
               id:
                 body.relatedSystemId,
@@ -1348,9 +2344,8 @@ app.post(
             select: {
               id: true,
             },
-          }
-        ),
-      ]);
+          }),
+        ]);
 
       if (!requester) {
         return validationError(
@@ -1374,7 +2369,9 @@ app.post(
         );
       }
 
-      if (!relatedSystem) {
+      if (
+        !relatedSystem
+      ) {
         return validationError(
           res,
           "The selected Related System is unavailable.",
@@ -1385,10 +2382,6 @@ app.post(
         );
       }
 
-      // ------------------------------------------------------
-      // Create Ticket
-      // ------------------------------------------------------
-
       const ticketNumber =
         await generateTicketNumber();
 
@@ -1396,7 +2389,6 @@ app.post(
         await prisma.ticket.create({
           data: {
             ticketNumber,
-
             clientSubmissionId,
 
             requesterId:
@@ -1447,9 +2439,11 @@ app.post(
             currentStatus:
               true,
 
-            createdAt: true,
+            createdAt:
+              true,
 
-            updatedAt: true,
+            updatedAt:
+              true,
           },
         });
 
@@ -1478,10 +2472,6 @@ app.post(
     }
   }
 );
-
-// ============================================================
-// Exports
-// ============================================================
 
 export { app };
 export default app;
