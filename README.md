@@ -1,196 +1,304 @@
 # TokTickIT
 
-TokTickIT is a simple IT service desk application created for CPE334 Lab 1.
+TokTickIT is a full-stack IT service desk application developed for CPE334.
 
-The goal of this lab is to prove that the full stack works together from the frontend to the database.
+Lab 1 established the basic full-stack foundation.
 
-## What This Project Uses
+Lab 2 adds the Requester-facing Ticketing MVP with a temporary Development Requester identity used to simulate multi-user ownership before authentication is introduced in a later lab.
 
-* Frontend: React + TypeScript + Vite + Bootstrap
-* Backend: Node.js + Express + TypeScript
-* Database: PostgreSQL
-* ORM: Prisma
-* Testing: Vitest + Supertest
+---
 
-## Lab 1 Features
+# Technology
 
-The application can:
+- Frontend: React + TypeScript + Vite + Bootstrap
+- Backend: Node.js + Express + TypeScript
+- Database: PostgreSQL
+- ORM: Prisma
+- API / Component Testing: Vitest + Supertest + Testing Library
+- End-to-End Testing: Playwright
 
-* Check whether the backend API is online
-* Display the system status as Online or Offline
-* Load supported request categories from PostgreSQL
-* Display:
+---
 
-  * Account and Access
-  * Hardware
-  * Software
-  * Network
-* Show a useful error message when the backend or database is unavailable
+# Lab 2 Features
 
-## Project Structure
+The Requester-facing Lab 2 increment supports:
 
-```text
-toktickit/
-├── client/                     # React frontend
-├── server/
-│   ├── prisma/                 # Prisma schema, migrations and seed
-│   ├── src/                    # Express backend
-│   └── tests/lab-01/           # Backend API tests
-├── docs/
-│   └── lab-01/
-│       ├── ai_use.md
-│       ├── reviewer.md
-│       └── tests.md
-├── .gitignore
-└── README.md
-```
+- Development Requester selection for testing
+- Active Requester filtering
+- Requester switching
+- Create Ticket
+- Backend-generated Ticket Number
+- Category and Related System reference data
+- Requested Priority
+- My Tickets
+- Requester ownership enforcement
+- Search
+- Filtering
+- Sorting
+- Pagination
+- Loading states
+- Empty and no-results states
+- Requester Ticket Detail
+- Attachment upload
+- JPG/JPEG, PNG, WEBP and PDF validation
+- Maximum 5 MB per Attachment
+- Maximum five active Attachments per Ticket
+- Attachment download
+- Soft removal with removal reason
+- Retained removed Attachment metadata
+- Blocked download after removal
+- Cross-Requester Ticket and Attachment protection
+- Zen Green responsive UI
+- Desktop, tablet and mobile verification
 
-## Requirements
+The Development Requester selector is only a Lab 2 testing mechanism. It is not authentication.
 
-Before running the project, install:
+---
 
-* Node.js
-* npm
-* PostgreSQL
+# Project Structure
 
-## Database Setup
+    toktickit/
+    ├── client/
+    │   ├── src/
+    │   └── tests/
+    │       ├── lab-01/
+    │       └── lab-02/
+    │
+    ├── server/
+    │   ├── prisma/
+    │   ├── src/
+    │   ├── tests/
+    │   │   ├── lab-01/
+    │   │   └── lab-02/
+    │   └── uploads/                 # Runtime files; not committed
+    │
+    ├── docs/
+    │   ├── lab-01/
+    │   └── lab-02/
+    │       ├── specification.md
+    │       ├── tests.md
+    │       ├── ui-spec.md
+    │       ├── api-spec.md
+    │       ├── reviewer.md
+    │       └── ai-use.md
+    │
+    ├── e2e/
+    │   └── lab-02/
+    │       └── requester-ticket-flow.spec.ts
+    │
+    ├── artifacts/
+    │   └── lab-02/
+    │       └── screenshots/
+    │           ├── create-ticket/
+    │           ├── my-tickets/
+    │           └── ticket-detail/
+    │
+    ├── playwright.config.ts
+    ├── package.json
+    ├── .gitignore
+    └── README.md
+
+---
+
+# Requirements
+
+Install:
+
+- Node.js
+- npm
+- PostgreSQL
+
+For E2E testing, Playwright Chromium is also required.
+
+---
+
+# Database Setup
 
 Create a PostgreSQL database for TokTickIT.
 
-Example configuration:
+Copy:
 
-```text
-Database: toktickit
-User: toktickit
-Port: 5432
-```
+    server/.env.example
 
-Copy the example environment file:
+to:
 
-```bash
-cd server
-copy .env.example .env
-```
+    server/.env
 
-Update `DATABASE_URL` in your local `.env` file if needed.
+and configure the local `DATABASE_URL`.
 
-The real `.env` file must not be committed to GitHub.
+The real `.env` file must never be committed.
 
-## Install Dependencies
+From the server directory:
 
-### Backend
+    cd server
+    npm install
+    npx prisma generate
+    npx prisma migrate dev
+    npm run prisma:seed
 
-```bash
-cd server
-npm install
-```
+The seed is designed to be safe to run repeatedly.
 
-### Frontend
+Lab 2 seed data includes:
 
-```bash
-cd client
-npm install
-```
+- Account and Access
+- Hardware
+- Software
+- Network
+- multiple Related Systems
+- at least four active Development Requesters
+- at least one inactive Development Requester
 
-## Prisma Setup
+---
 
-From the `server` folder:
-
-```bash
-npx prisma generate
-npx prisma migrate dev --name init
-npm run prisma:seed
-```
-
-The seed creates the four supported request categories and can be run more than once without creating duplicates.
-
-## Run the Application
-
-### Backend
-
-```bash
-cd server
-npm run dev
-```
+# Install Dependencies
 
 Backend:
 
-```text
-http://localhost:3000
-```
-
-### Frontend
-
-Open another terminal:
-
-```bash
-cd client
-npm run dev
-```
+    cd server
+    npm install
 
 Frontend:
 
-```text
-http://localhost:5173
-```
+    cd client
+    npm install
 
-## Run Tests
+Root / Playwright:
 
-### Backend
+    npm install
+    npx playwright install chromium
 
-```bash
-cd server
-npm test
-```
+---
 
-Tests include:
+# Run the Application
 
-* `GET /api/health`
-* `GET /api/categories`
+Backend:
 
-### Frontend
+    cd server
+    npm run dev
 
-```bash
-cd client
-npm test
-```
+Backend runs at:
 
-Tests include:
+    http://localhost:3000
 
-* TokTickIT heading renders
-* Successful system check displays Online and categories
-* API failure displays Offline with a useful error message
+Frontend in another terminal:
 
-## Git Workflow
+    cd client
+    npm run dev
 
-Development follows this workflow:
+Frontend runs at:
 
-```text
-feature branch
-      ↓
-lab1-staging
-      ↓
-main
-```
+    http://localhost:5173
 
-The Lab 1 feature branches are:
+---
 
-```text
-feature/1-project-foundation
-feature/2-health-check
-feature/3-category-seed
-feature/4-category-list
-```
+# Run Server Tests
 
-Each feature is merged into `lab1-staging` through a peer-reviewed Pull Request.
+From:
 
-After all four features are completed and tested, `lab1-staging` is merged into `main` as the final Lab 1 release.
+    server/
 
-## Important
+run:
+
+    npm test
+
+Build verification:
+
+    npm run build
+
+Lab 2 server tests cover:
+
+- Development Requester API
+- Create Ticket
+- My Tickets
+- Ticket Detail
+- Attachment lifecycle
+- ownership behavior
+- validation and safe failures
+
+---
+
+# Run Client Tests
+
+From:
+
+    client/
+
+run:
+
+    npm test
+
+Build verification:
+
+    npm run build
+
+Lab 2 client tests cover:
+
+- Development Requester Selection
+- Create Ticket
+- My Tickets
+- Requester Ticket Detail
+- Attachment Section
+- Zen Green UI states and styles
+
+---
+
+# Run End-to-End Tests
+
+From the repository root:
+
+    npx playwright test
+
+The Lab 2 Playwright suite verifies:
+
+- Development Requester selection
+- Ticket creation
+- My Tickets
+- Ticket Detail
+- Attachment upload
+- Attachment download
+- soft removal
+- blocked removed-file download
+- Requester ownership isolation
+- desktop responsive behavior
+- tablet responsive behavior
+- mobile responsive behavior
+- horizontal overflow protection
+
+Playwright screenshots are stored under:
+
+    artifacts/lab-02/screenshots/
+
+---
+
+# Lab 2 Git Workflow
+
+Lab 2 uses:
+
+    feature branch
+          ↓
+    lab2-staging
+          ↓
+    main
+
+Each Issue is developed on its own feature branch and enters `lab2-staging` through a Pull Request and peer review.
+
+After all Lab 2 work passes integration testing, one final release Pull Request merges:
+
+    lab2-staging → main
+
+---
+
+# Important
 
 Do not commit:
 
-* `.env`
-* `node_modules`
+- `.env`
+- `node_modules`
+- runtime Attachment files in `server/uploads/`
+- Playwright temporary reports/results
 
-Additional Lab 1 evidence can be found in `docs/lab-01/`.
+Required Lab 2 documentation is located under:
+
+    docs/lab-02/
+
+The final `main` branch is the source of truth for Lab 2 submission.
