@@ -6,7 +6,7 @@ Ploychanok Imsuwan
 
 ## Peer Reviewer
 
-Kiatisakk - peer reviewer
+Kiatisak - peer reviewer
 Pimchaya Suprateravanit - peer reviewer
 Natsumi Takagi - peer reviewer
 Pow Wongtanakarn — peer reviewer
