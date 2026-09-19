@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import request from "supertest";
 import app from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
@@ -8,7 +8,7 @@ describe("Lab 3 removal of Development Requester directory", () => {
   it("does not expose /api/requesters without authentication", async () => {
     const response = await request(app).get("/api/requesters");
     expect(response.status).toBe(401);
-    expect(response.body.error.code).toBe("AUTH_REQUIRED");
+    expect(response.body.error.code).toBe("UNAUTHENTICATED");
   });
 
   it("does not expose the removed requester directory to signed-in users", async () => {
@@ -38,3 +38,4 @@ describe("Lab 3 removal of Development Requester directory", () => {
     expect(response.body.user).not.toHaveProperty("isActive");
   });
 });
+

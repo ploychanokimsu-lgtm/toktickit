@@ -1,4 +1,4 @@
-import {
+﻿import {
   afterAll,
   beforeAll,
   describe,
@@ -211,7 +211,7 @@ describe("Lab 2 My Tickets API", () => {
       .expect(401);
 
     expect(response.body.error.code).toBe(
-      "AUTH_REQUIRED"
+      "UNAUTHENTICATED"
     );
   });
 
@@ -222,7 +222,7 @@ describe("Lab 2 My Tickets API", () => {
       .expect(401);
 
     expect(response.body.error.code).toBe(
-      "AUTH_REQUIRED"
+      "UNAUTHENTICATED"
     );
   });
 

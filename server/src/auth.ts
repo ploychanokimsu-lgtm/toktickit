@@ -171,7 +171,7 @@ export async function requireAuth(
       return fail(
         res,
         401,
-        "AUTH_REQUIRED",
+        "UNAUTHENTICATED",
         "Sign in is required."
       );
     }
@@ -195,7 +195,7 @@ export async function requireAuth(
       return fail(
         res,
         401,
-        "AUTH_REQUIRED",
+        "UNAUTHENTICATED",
         "Session expired. Sign in again."
       );
     }
@@ -226,7 +226,7 @@ export async function requireAuth(
       return fail(
         res,
         401,
-        "AUTH_REQUIRED",
+        "UNAUTHENTICATED",
         "Session is no longer valid."
       );
     }
@@ -433,7 +433,9 @@ authRouter.post("/logout", async (req, res) => {
 
     clearSessionCookie(res);
 
-    return res.status(204).send();
+    return res.status(200).json({
+  message: "Logged out successfully.",
+});
   } catch (error) {
     console.error("Logout error:", error);
 
@@ -557,9 +559,10 @@ authRouter.post(
       clearSessionCookie(res);
 
       return res.status(200).json({
-        message:
-          "Password changed. Please sign in again.",
-      });
+  message:
+    "Password changed. Please sign in again.",
+  mustChangePassword: false,
+});
     } catch (error) {
       console.error("Password change error:", error);
 
