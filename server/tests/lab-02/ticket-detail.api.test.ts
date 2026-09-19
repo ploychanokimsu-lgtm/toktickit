@@ -1,4 +1,4 @@
-import {
+﻿import {
   afterAll,
   beforeAll,
   describe,
@@ -10,6 +10,8 @@ import request from "supertest";
 
 import app from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
+import { cookieFor } from "../helpers/test-session.js";
+
 
 const prisma = getPrisma();
 
@@ -21,16 +23,16 @@ describe("Lab 2 Requester Ticket Detail API", () => {
   let requesterAId: number;
   let requesterBId: number;
   let inactiveRequesterId: number;
+  let requesterCookie: string;
+  let inactiveCookie: string;
 
   let ownedTicketId: number;
   let otherRequesterTicketId: number;
 
   beforeAll(async () => {
     const activeRequesters =
-      await prisma.requesterUser.findMany({
-        where: {
-          isActive: true,
-        },
+      await prisma.user.findMany({
+        where: { isActive: true, role: "REQUESTER" },
         orderBy: {
           id: "asc",
         },
@@ -44,7 +46,7 @@ describe("Lab 2 Requester Ticket Detail API", () => {
     }
 
     const inactiveRequester =
-      await prisma.requesterUser.findFirstOrThrow({
+      await prisma.user.findFirstOrThrow({
         where: {
           isActive: false,
         },
@@ -73,6 +75,8 @@ describe("Lab 2 Requester Ticket Detail API", () => {
     requesterAId = activeRequesters[0].id;
     requesterBId = activeRequesters[1].id;
     inactiveRequesterId = inactiveRequester.id;
+    requesterCookie = await cookieFor(requesterAId);
+    inactiveCookie = await cookieFor(inactiveRequesterId);
 
     const ownedTicket =
       await prisma.ticket.create({
@@ -86,6 +90,7 @@ describe("Lab 2 Requester Ticket Detail API", () => {
           description:
             "This ticket belongs to Requester A and must be visible to Requester A.",
           requestedPriority: "MEDIUM",
+          itPriority: "MEDIUM",
           currentStatus: "NEW",
         },
       });
@@ -102,6 +107,7 @@ describe("Lab 2 Requester Ticket Detail API", () => {
           description:
             "This ticket belongs to Requester B and must not be visible to Requester A.",
           requestedPriority: "HIGH",
+          itPriority: "HIGH",
           currentStatus: "NEW",
         },
       });
@@ -124,10 +130,7 @@ describe("Lab 2 Requester Ticket Detail API", () => {
   it("returns one owned Ticket with read-only detail data", async () => {
     const response = await request(app)
       .get(`/api/tickets/${ownedTicketId}`)
-      .set(
-        "X-Development-Requester-Id",
-        String(requesterAId)
-      )
+      .set("Cookie", requesterCookie)
       .expect(200);
 
     expect(response.body.ticket).toEqual(
@@ -136,6 +139,7 @@ describe("Lab 2 Requester Ticket Detail API", () => {
         requesterId: requesterAId,
         summary: "Owned Ticket Detail test",
         requestedPriority: "MEDIUM",
+        itPriority: "MEDIUM",
         currentStatus: "NEW",
       })
     );
@@ -169,27 +173,24 @@ describe("Lab 2 Requester Ticket Detail API", () => {
     );
   });
 
-  it("requires a Development Requester context", async () => {
+  it("requires a signed-in session", async () => {
     const response = await request(app)
       .get(`/api/tickets/${ownedTicketId}`)
-      .expect(400);
+      .expect(401);
 
     expect(response.body.error.code).toBe(
-      "REQUESTER_CONTEXT_REQUIRED"
+      "UNAUTHENTICATED"
     );
   });
 
-  it("rejects an inactive Requester context", async () => {
+  it("rejects an inactive requester session", async () => {
     const response = await request(app)
       .get(`/api/tickets/${ownedTicketId}`)
-      .set(
-        "X-Development-Requester-Id",
-        String(inactiveRequesterId)
-      )
-      .expect(400);
+      .set("Cookie", inactiveCookie)
+      .expect(401);
 
     expect(response.body.error.code).toBe(
-      "INVALID_REQUESTER_CONTEXT"
+      "UNAUTHENTICATED"
     );
   });
 
@@ -198,10 +199,7 @@ describe("Lab 2 Requester Ticket Detail API", () => {
       .get(
         `/api/tickets/${otherRequesterTicketId}`
       )
-      .set(
-        "X-Development-Requester-Id",
-        String(requesterAId)
-      )
+      .set("Cookie", requesterCookie)
       .expect(404);
 
     expect(response.body.error.code).toBe(
@@ -212,10 +210,7 @@ describe("Lab 2 Requester Ticket Detail API", () => {
   it("returns the same safe 404 for a missing Ticket", async () => {
     const response = await request(app)
       .get("/api/tickets/999999999")
-      .set(
-        "X-Development-Requester-Id",
-        String(requesterAId)
-      )
+      .set("Cookie", requesterCookie)
       .expect(404);
 
     expect(response.body.error.code).toBe(
@@ -226,10 +221,7 @@ describe("Lab 2 Requester Ticket Detail API", () => {
   it("rejects an invalid Ticket ID", async () => {
     const response = await request(app)
       .get("/api/tickets/not-a-number")
-      .set(
-        "X-Development-Requester-Id",
-        String(requesterAId)
-      )
+      .set("Cookie", requesterCookie)
       .expect(400);
 
     expect(response.body.error.code).toBe(

@@ -23,10 +23,17 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { getPrisma } from "./prisma.js";
+import {
+  allowedOrigins,
+  authRouter,
+  requireAuth,
+  requireCompletedPasswordChange,
+  verifyRequestOrigin,
+} from "./auth.js";
 
 const app = express();
 
-app.use(cors());
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 
 const prisma = getPrisma();
@@ -153,8 +160,8 @@ type RequesterContextResult =
         status: number;
 
         code:
-          | "REQUESTER_CONTEXT_REQUIRED"
-          | "INVALID_REQUESTER_CONTEXT";
+          | "AUTH_REQUIRED"
+          | "FORBIDDEN";
 
         message: string;
       };
@@ -218,84 +225,39 @@ function positiveInteger(
 async function getActiveRequesterContext(
   req: Request
 ): Promise<RequesterContextResult> {
-  const rawId =
-    req.header(
-      "X-Development-Requester-Id"
-    );
+  const user = req.authUser;
 
-  if (!rawId) {
+  if (!user) {
     return {
       ok: false,
-
       error: {
-        status: 400,
-
-        code:
-          "REQUESTER_CONTEXT_REQUIRED",
-
-        message:
-          "A Development Requester context is required.",
+        status: 401,
+        code: "AUTH_REQUIRED",
+        message: "Sign in is required.",
       },
     };
   }
 
-  const requesterId =
-    positiveInteger(rawId);
-
-  if (
-    requesterId === null
-  ) {
+  if (user.role !== "REQUESTER") {
     return {
       ok: false,
-
       error: {
-        status: 400,
-
-        code:
-          "INVALID_REQUESTER_CONTEXT",
-
-        message:
-          "The Development Requester context is invalid.",
-      },
-    };
-  }
-
-  const requester =
-    await prisma.requesterUser.findFirst({
-      where: {
-        id: requesterId,
-        isActive: true,
-      },
-
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    });
-
-  if (!requester) {
-    return {
-      ok: false,
-
-      error: {
-        status: 400,
-
-        code:
-          "INVALID_REQUESTER_CONTEXT",
-
-        message:
-          "The Development Requester context is invalid or inactive.",
+        status: 403,
+        code: "FORBIDDEN",
+        message: "Requester access is required.",
       },
     };
   }
 
   return {
     ok: true,
-    requester,
+    requester: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    },
   };
 }
-
 function buildOrderBy(
   sortBy: AllowedSortField,
 
@@ -481,6 +443,31 @@ function multerErrorCode(
     : null;
 }
 
+// Lab 3 authentication
+
+app.use("/api", verifyRequestOrigin);
+
+app.use("/api/auth", authRouter);
+
+app.use("/api", (req, res, next) => {
+  if (req.path === "/health") {
+    return next();
+  }
+
+  return requireAuth(req, res, next);
+});
+
+app.use("/api", (req, res, next) => {
+  if (req.path === "/health") {
+    return next();
+  }
+
+  return requireCompletedPasswordChange(
+    req,
+    res,
+    next
+  );
+});
 // ============================================================
 // Health
 // ============================================================
@@ -550,62 +537,6 @@ app.get(
 
             message:
               "Failed to fetch Categories.",
-          },
-        });
-    }
-  }
-);
-
-// ============================================================
-// Development Requesters
-// ============================================================
-
-app.get(
-  "/api/requesters",
-
-  async (
-    _req: Request,
-    res: Response
-  ) => {
-    try {
-      const requesters =
-        await prisma.requesterUser.findMany({
-          where: {
-            isActive:
-              true,
-          },
-
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-
-          orderBy: {
-            name: "asc",
-          },
-        });
-
-      return res
-        .status(200)
-        .json({
-          requesters,
-        });
-    } catch (error) {
-      console.error(
-        "Failed to fetch Development Requesters:",
-        error
-      );
-
-      return res
-        .status(500)
-        .json({
-          error: {
-            code:
-              "INTERNAL_ERROR",
-
-            message:
-              "Failed to fetch Development Requesters.",
           },
         });
     }
@@ -2082,6 +2013,17 @@ app.post(
     res: Response
   ) => {
     try {
+      const authUser = req.authUser;
+
+      if (!authUser || authUser.role !== "REQUESTER") {
+        return res.status(403).json({
+          error: {
+            code: "FORBIDDEN",
+            message: "Requester access is required.",
+          },
+        });
+      }
+
       const body =
         req.body as CreateTicketBody;
 
@@ -2103,25 +2045,6 @@ app.post(
 
       const clientSubmissionId =
         body.clientSubmissionId.trim();
-
-      if (
-        typeof body.requesterId !==
-          "number" ||
-        !Number.isInteger(
-          body.requesterId
-        ) ||
-        body.requesterId <=
-          0
-      ) {
-        return validationError(
-          res,
-          "A valid Requester is required.",
-          {
-            requesterId:
-              "Requester is required.",
-          }
-        );
-      }
 
       if (
         typeof body.categoryId !==
@@ -2304,13 +2227,11 @@ app.post(
         relatedSystem,
       ] =
         await Promise.all([
-          prisma.requesterUser.findFirst({
+          prisma.user.findFirst({
             where: {
-              id:
-                body.requesterId,
-
-              isActive:
-                true,
+              id: authUser.id,
+              isActive: true,
+              role: "REQUESTER",
             },
 
             select: {
@@ -2350,10 +2271,10 @@ app.post(
       if (!requester) {
         return validationError(
           res,
-          "The selected Development Requester is unavailable.",
+          "Requester account is unavailable.",
           {
             requesterId:
-              "The selected Development Requester is unavailable.",
+              "Requester account is unavailable.",
           }
         );
       }
@@ -2391,8 +2312,7 @@ app.post(
             ticketNumber,
             clientSubmissionId,
 
-            requesterId:
-              body.requesterId,
+            requesterId: authUser.id,
 
             categoryId:
               body.categoryId,
@@ -2404,7 +2324,9 @@ app.post(
 
             requestedPriority,
 
-            description,
+itPriority: requestedPriority,
+
+description,
 
             currentStatus:
               "NEW",

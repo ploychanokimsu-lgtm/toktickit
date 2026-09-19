@@ -1,11 +1,46 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, type UserRole } from "@prisma/client";
+import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
+const BCRYPT_ROUNDS = 12;
+
+type SeedUser = {
+  name: string;
+  email: string;
+  role: UserRole;
+  isActive: boolean;
+};
+
 async function main() {
   // ------------------------------------------------------------
-  // Lab 1 / Lab 2: Seed supported Ticket Categories
-  // Running the seed multiple times must not create duplicates.
+  // Require a local-only initial password.
+  // Never commit real passwords to the repository.
+  // ------------------------------------------------------------
+
+  const initialPassword = process.env.LAB3_INITIAL_PASSWORD;
+
+  if (
+    !initialPassword ||
+    initialPassword.length < 8 ||
+    initialPassword.length > 72 ||
+    !/[A-Z]/.test(initialPassword) ||
+    !/[a-z]/.test(initialPassword) ||
+    !/[0-9]/.test(initialPassword) ||
+    !/[^A-Za-z0-9]/.test(initialPassword)
+  ) {
+    throw new Error(
+      "Set LAB3_INITIAL_PASSWORD to a valid local-only password before seeding."
+    );
+  }
+
+  const passwordHash = await bcrypt.hash(
+    initialPassword,
+    BCRYPT_ROUNDS
+  );
+
+  // ------------------------------------------------------------
+  // Categories — preserve Lab 1 and Lab 2
   // ------------------------------------------------------------
 
   const categories = [
@@ -18,9 +53,7 @@ async function main() {
   for (const name of categories) {
     await prisma.category.upsert({
       where: { name },
-      update: {
-        isActive: true,
-      },
+      update: {},
       create: {
         name,
         isActive: true,
@@ -28,10 +61,10 @@ async function main() {
     });
   }
 
-  console.log("Categories seeded successfully.");
+  console.log("Categories seeded.");
 
   // ------------------------------------------------------------
-  // Lab 2: Seed Related Systems
+  // Related Systems — preserve Lab 2
   // ------------------------------------------------------------
 
   const relatedSystems = [
@@ -47,9 +80,7 @@ async function main() {
   for (const name of relatedSystems) {
     await prisma.relatedSystem.upsert({
       where: { name },
-      update: {
-        isActive: true,
-      },
+      update: {},
       create: {
         name,
         isActive: true,
@@ -57,61 +88,186 @@ async function main() {
     });
   }
 
-  console.log("Related Systems seeded successfully.");
+  console.log("Related Systems seeded.");
 
   // ------------------------------------------------------------
-  // Lab 2: Seed Development Requesters
-  // At least four active Requesters and one inactive Requester.
+  // Lab 3 Requester accounts
   // ------------------------------------------------------------
 
-  const requesters = [
+  const requesters: SeedUser[] = [
     {
       name: "Jennifer Anderson",
       email: "jennifer.anderson@example.com",
+      role: "REQUESTER",
       isActive: true,
     },
     {
       name: "Michael Brown",
       email: "michael.brown@example.com",
+      role: "REQUESTER",
       isActive: true,
     },
     {
       name: "Narin Chaiyasit",
       email: "narin.chaiyasit@example.com",
+      role: "REQUESTER",
       isActive: true,
     },
     {
       name: "Ploy Srisuk",
       email: "ploy.srisuk@example.com",
+      role: "REQUESTER",
       isActive: true,
     },
     {
       name: "Alex Turner",
       email: "alex.turner@example.com",
+      role: "REQUESTER",
       isActive: false,
     },
   ];
 
-  for (const requester of requesters) {
-    await prisma.requesterUser.upsert({
+  // ------------------------------------------------------------
+  // Lab 3 IT Staff accounts
+  // ------------------------------------------------------------
+
+  const staff: SeedUser[] = [
+    {
+      name: "Daniel Wilson",
+      email: "daniel.wilson@example.com",
+      role: "IT_STAFF",
+      isActive: true,
+    },
+    {
+      name: "Sarah Johnson",
+      email: "sarah.johnson@example.com",
+      role: "IT_STAFF",
+      isActive: true,
+    },
+    {
+      name: "Kevin Patel",
+      email: "kevin.patel@example.com",
+      role: "IT_STAFF",
+      isActive: true,
+    },
+    {
+      name: "David Lee",
+      email: "david.lee@example.com",
+      role: "IT_STAFF",
+      isActive: false,
+    },
+  ];
+
+  // ------------------------------------------------------------
+  // Lab 3 Administrator
+  // ------------------------------------------------------------
+
+  const administrators: SeedUser[] = [
+    {
+      name: "Alex Thompson",
+      email: "admin@example.com",
+      role: "ADMINISTRATOR",
+      isActive: true,
+    },
+  ];
+
+  const users = [
+    ...requesters,
+    ...staff,
+    ...administrators,
+  ];
+
+  // ------------------------------------------------------------
+  // Idempotent user creation
+  // ------------------------------------------------------------
+
+  for (const user of users) {
+    await prisma.user.upsert({
       where: {
-        email: requester.email,
+        email: user.email,
       },
-      update: {
-        name: requester.name,
-        isActive: requester.isActive,
+      update: {},
+      create: {
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive,
+        passwordHash,
+        mustChangePassword: true,
       },
-      create: requester,
     });
   }
 
-  console.log("Development Requesters seeded successfully.");
+  // ------------------------------------------------------------
+  // Backfill migrated Lab 2 Requesters
+  //
+  // Only accounts without a password hash are updated.
+  // Existing changed passwords remain untouched.
+  // ------------------------------------------------------------
+
+  const backfill = await prisma.user.updateMany({
+    where: {
+      passwordHash: null,
+    },
+    data: {
+      passwordHash,
+      mustChangePassword: true,
+    },
+  });
+
+  console.log(
+    `Password hashes backfilled for ${backfill.count} existing users.`
+  );
+
+  console.log("Lab 3 users seeded successfully.");
+
+  // ------------------------------------------------------------
+  // Verification
+  // ------------------------------------------------------------
+
+  const requesterCount = await prisma.user.count({
+    where: {
+      role: "REQUESTER",
+      isActive: true,
+    },
+  });
+
+  const staffCount = await prisma.user.count({
+    where: {
+      role: "IT_STAFF",
+      isActive: true,
+    },
+  });
+
+  const adminCount = await prisma.user.count({
+    where: {
+      role: "ADMINISTRATOR",
+      isActive: true,
+    },
+  });
+
+  if (
+    requesterCount < 4 ||
+    staffCount < 3 ||
+    adminCount < 1
+  ) {
+    throw new Error(
+      "Required Lab 3 active account counts were not met."
+    );
+  }
+
+  console.log("Seed verification:");
+  console.log(`Active Requesters: ${requesterCount}`);
+  console.log(`Active IT Staff: ${staffCount}`);
+  console.log(`Active Administrators: ${adminCount}`);
+
+  console.log("Lab 3 seed completed.");
 }
 
 main()
   .catch((error) => {
     console.error("Seed failed:", error);
-    process.exit(1);
+    process.exitCode = 1;
   })
   .finally(async () => {
     await prisma.$disconnect();

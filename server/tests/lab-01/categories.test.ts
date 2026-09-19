@@ -1,10 +1,17 @@
 import { describe, it, expect } from "vitest";
+import { getPrisma } from "../../src/prisma.js";
+import { cookieFor } from "../helpers/test-session.js";
+
 import request from "supertest";
 import { app } from "../../src/app.js";
 
 describe("GET /api/categories", () => {
   it("returns the four seeded categories in id order", async () => {
-    const response = await request(app).get("/api/categories");
+    const requester = await getPrisma().user.findFirstOrThrow({
+      where: { role: "REQUESTER", isActive: true },
+    });
+    const response = await request(app).get("/api/categories")
+      .set("Cookie", await cookieFor(requester.id));
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(4);
