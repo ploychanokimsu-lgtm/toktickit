@@ -1,4 +1,4 @@
-﻿import "@testing-library/jest-dom/vitest";
+import "@testing-library/jest-dom/vitest";
 
 import {
   fireEvent,
@@ -297,20 +297,14 @@ describe("Lab3App", () => {
     );
 
     expect(
-      screen.getByRole("heading", {
-        name: "Ticket selected",
-      })
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText(
-        /Ticket ID 42 is ready/
-      )
-    ).toBeInTheDocument();
+      screen.getByRole("status")
+    ).toHaveTextContent(
+      "Loading Ticket Detail..."
+    );
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Back to queue",
+        name: "Staff Ticket Queue",
       })
     );
 
@@ -320,7 +314,6 @@ describe("Lab3App", () => {
       })
     ).toBeInTheDocument();
   });
-
   it("signs the authenticated user out", async () => {
     mockedGetSessionUser.mockResolvedValue(
       staffUser

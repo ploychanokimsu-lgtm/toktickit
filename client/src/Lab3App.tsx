@@ -1,4 +1,5 @@
-﻿import {
+import StaffTicketDetail from "./StaffTicketDetail.js";
+import {
   type FormEvent,
   useCallback,
   useEffect,
@@ -453,44 +454,13 @@ function StaffWorkspace({
           }
         />
       ) : (
-        <main className="tk-page tk-page-medium">
-          <div className="tk-page-header">
-            <div>
-              <h1 className="tk-page-title">
-                Ticket selected
-              </h1>
-
-              <p className="tk-page-description">
-                Ticket ID {selectedTicketId} is ready
-                for the detailed IT Staff operations
-                workflow.
-              </p>
-            </div>
-          </div>
-
-          <section className="tk-card">
-            <div className="tk-card-body">
-              <p>
-                Claiming, reassignment, priority
-                updates, status changes, comments and
-                internal notes are implemented in the
-                separate detailed operations issue.
-              </p>
-
-              <div className="tk-button-row">
-                <button
-                  type="button"
-                  className="tk-button tk-button-secondary"
-                  onClick={() =>
-                    setSelectedTicketId(null)
-                  }
-                >
-                  Back to queue
-                </button>
-              </div>
-            </div>
-          </section>
-        </main>
+        <StaffTicketDetail
+          ticketId={selectedTicketId}
+          currentUserId={user.id}
+          onBack={() =>
+            setSelectedTicketId(null)
+          }
+        />
       )}
     </div>
   );
