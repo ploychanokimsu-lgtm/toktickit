@@ -1,3 +1,5 @@
+import { staffQueueRouter } from "./staff-queue.js";
+
 import cors from "cors";
 import express, {
   type Request,
@@ -448,7 +450,10 @@ function multerErrorCode(
 app.use("/api", verifyRequestOrigin);
 
 app.use("/api/auth", authRouter);
-
+app.use(
+  "/api/staff/tickets",
+  staffQueueRouter
+);
 app.use("/api", (req, res, next) => {
   if (req.path === "/health") {
     return next();
