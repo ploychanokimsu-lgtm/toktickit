@@ -1,4 +1,5 @@
 import { staffQueueRouter } from "./staff-queue.js";
+import { staffTicketOperationsRouter } from "./staff-ticket-operations.js";
 
 import cors from "cors";
 import express, {
@@ -453,6 +454,10 @@ app.use("/api/auth", authRouter);
 app.use(
   "/api/staff/tickets",
   staffQueueRouter
+);
+app.use(
+  "/api/staff/tickets",
+  staffTicketOperationsRouter
 );
 app.use("/api", (req, res, next) => {
   if (req.path === "/health") {
@@ -2399,6 +2404,8 @@ description,
     }
   }
 );
+
+
 
 export { app };
 export default app;
