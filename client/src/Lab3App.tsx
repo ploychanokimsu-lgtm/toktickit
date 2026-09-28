@@ -1,4 +1,5 @@
 import StaffTicketDetail from "./StaffTicketDetail.js";
+import UserManagement from "./UserManagement.js";
 import {
   type FormEvent,
   useCallback,
@@ -466,6 +467,88 @@ function StaffWorkspace({
   );
 }
 
+function AdministratorWorkspace({
+  user,
+  onLogout,
+}: {
+  user: SessionUser;
+  onLogout: () => Promise<void>;
+}) {
+  const [logoutError, setLogoutError] =
+    useState("");
+
+  async function handleLogout() {
+    setLogoutError("");
+
+    try {
+      await onLogout();
+    } catch (error) {
+      setLogoutError(
+        error instanceof Error
+          ? error.message
+          : "Unable to sign out."
+      );
+    }
+  }
+
+  return (
+    <div className="tk-app">
+      <header className="tk-header">
+        <div className="tk-header-inner">
+          <span className="tk-brand">
+            TokTickIT
+          </span>
+
+          <div className="tk-header-actions">
+            <span className="tk-requester-display">
+              {user.name} ·{" "}
+              <strong>
+                Administrator
+              </strong>
+            </span>
+
+            <button
+              type="button"
+              className="tk-button tk-button-secondary tk-button-sm"
+              onClick={() =>
+                void handleLogout()
+              }
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <nav
+        className="tk-nav"
+        aria-label="Main navigation"
+      >
+        <span
+          className="tk-nav-link active"
+          aria-current="page"
+        >
+          User Management
+        </span>
+      </nav>
+
+      {logoutError && (
+        <main className="tk-page">
+          <div
+            className="tk-alert tk-alert-error"
+            role="alert"
+          >
+            {logoutError}
+          </div>
+        </main>
+      )}
+
+      <UserManagement
+        currentUserId={user.id}
+      />
+    </div>
+  );
+}
 export default function Lab3App() {
   const [checkingSession, setCheckingSession] =
     useState(true);
@@ -561,10 +644,22 @@ export default function Lab3App() {
     );
   }
 
-  if (
-    user.role === "IT_STAFF" ||
-    user.role === "ADMINISTRATOR"
-  ) {
+  if (user.role === "ADMINISTRATOR") {
+    return (
+      <AdministratorWorkspace
+        user={user}
+        onLogout={async () => {
+          await signOut();
+          setUser(null);
+          setNotice(
+            "You have signed out successfully."
+          );
+        }}
+      />
+    );
+  }
+
+  if (user.role === "IT_STAFF") {
     return (
       <StaffWorkspace
         user={user}
@@ -578,6 +673,5 @@ export default function Lab3App() {
       />
     );
   }
-
   return <App />;
 }

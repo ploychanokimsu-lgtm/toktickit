@@ -57,6 +57,27 @@ vi.mock(
   })
 );
 
+vi.mock(
+  "../../src/UserManagement.js",
+  () => ({
+    default: ({
+      currentUserId,
+    }: {
+      currentUserId: number;
+    }) => (
+      <section>
+        <h1>
+          Mock User Management
+        </h1>
+
+        <div>
+          Current Administrator ID:{" "}
+          {currentUserId}
+        </div>
+      </section>
+    ),
+  })
+);
 vi.mock("../../src/App.js", () => ({
   default: () => (
     <div>Mock Requester Workspace</div>
@@ -173,7 +194,7 @@ describe("Lab3App", () => {
     );
   });
 
-  it("allows Administrators to access the Staff Ticket Queue", async () => {
+  it("shows User Management to Administrators", async () => {
     mockedGetSessionUser.mockResolvedValue(
       administratorUser
     );
@@ -182,15 +203,22 @@ describe("Lab3App", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "Mock Staff Ticket Queue",
+        name: "Mock User Management",
       })
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText("Administrator")
+      screen.getByText(
+        "Current Administrator ID: 11"
+      )
     ).toBeInTheDocument();
-  });
 
+    expect(
+      screen.queryByRole("heading", {
+        name: "Mock Staff Ticket Queue",
+      })
+    ).not.toBeInTheDocument();
+  });
   it("does not show the Staff Queue to Requesters", async () => {
     mockedGetSessionUser.mockResolvedValue(
       requesterUser

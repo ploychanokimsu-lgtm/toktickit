@@ -1,3 +1,4 @@
+import { adminUsersRouter } from "./admin-users.js";
 import { staffQueueRouter } from "./staff-queue.js";
 import { staffTicketOperationsRouter } from "./staff-ticket-operations.js";
 
@@ -451,6 +452,10 @@ function multerErrorCode(
 app.use("/api", verifyRequestOrigin);
 
 app.use("/api/auth", authRouter);
+app.use(
+  "/api/admin/users",
+  adminUsersRouter
+);
 app.use(
   "/api/staff/tickets",
   staffQueueRouter
