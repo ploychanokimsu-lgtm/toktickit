@@ -524,3 +524,123 @@ textarea {
     padding: 36px 0;
   }
 }
+/* ============================================================
+   Administrator User Management
+   ============================================================ */
+
+.tk-admin-section {
+  margin-bottom: 24px;
+}
+
+.tk-admin-message {
+  margin-bottom: 20px;
+}
+
+.tk-admin-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 260px) auto;
+  gap: 16px;
+  align-items: end;
+}
+
+.tk-admin-filter-grid .tk-form-group {
+  margin-bottom: 0;
+}
+
+.tk-admin-filter-actions,
+.tk-admin-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tk-admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+}
+
+.tk-admin-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.tk-admin-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tk-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 820px;
+}
+
+.tk-admin-table th,
+.tk-admin-table td {
+  padding: 14px 12px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--tk-border);
+}
+
+.tk-admin-table th {
+  font-size: 0.875rem;
+  font-weight: 700;
+  background: var(--tk-pale-green);
+}
+
+.tk-admin-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.tk-admin-status {
+  display: inline-block;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.tk-admin-status-active {
+  color: var(--tk-primary);
+  background: var(--tk-pale-green);
+}
+
+.tk-admin-status-inactive {
+  color: var(--tk-error);
+  background: var(--tk-error-bg);
+}
+
+.tk-admin-you {
+  color: var(--tk-muted);
+  font-size: 0.875rem;
+}
+
+.tk-admin-empty {
+  padding: 28px 0;
+  color: var(--tk-muted);
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .tk-admin-filter-grid,
+  .tk-admin-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tk-admin-filter-grid .tk-form-group {
+    margin-bottom: 4px;
+  }
+
+  .tk-admin-filter-actions {
+    flex-direction: column-reverse;
+  }
+
+  .tk-admin-filter-actions .tk-button {
+    width: 100%;
+  }
+}
