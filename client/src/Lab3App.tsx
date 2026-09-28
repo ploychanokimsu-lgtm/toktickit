@@ -673,5 +673,20 @@ export default function Lab3App() {
       />
     );
   }
-  return <App />;
+  return (
+    <App
+      authenticatedRequester={{
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      }}
+      onLogout={async () => {
+        await signOut();
+        setUser(null);
+        setNotice(
+          "You have signed out successfully."
+        );
+      }}
+    />
+  );
 }

@@ -203,6 +203,9 @@ export interface TicketDetail {
     | RequestedPriority
     | null;
 
+  requesterResolutionIndicatedAt:
+    string | null;
+
   createdAt:
     string;
 
@@ -283,7 +286,10 @@ export async function checkSystem(): Promise<SystemStatus> {
 
     const categoriesResponse =
       await fetch(
-        `${API_URL}/api/categories`
+        `${API_URL}/api/categories`,
+      {
+          credentials: "include",
+        }
       );
 
     if (
@@ -335,7 +341,10 @@ export async function getCategories(): Promise<
 > {
   const response =
     await fetch(
-      `${API_URL}/api/categories`
+      `${API_URL}/api/categories`,
+    {
+          credentials: "include",
+        }
     );
 
   if (!response.ok) {
@@ -354,7 +363,10 @@ export async function getRelatedSystems(): Promise<
 > {
   const response =
     await fetch(
-      `${API_URL}/api/related-systems`
+      `${API_URL}/api/related-systems`,
+    {
+          credentials: "include",
+        }
     );
 
   if (!response.ok) {
@@ -381,6 +393,8 @@ export async function createTicket(
       `${API_URL}/api/tickets`,
 
       {
+        credentials: "include",
+
         method: "POST",
 
         headers: {
@@ -504,6 +518,8 @@ export async function getMyTickets(
       `${API_URL}/api/tickets?${params.toString()}`,
 
       {
+        credentials: "include",
+
         headers: {
           "X-Development-Requester-Id":
             String(
@@ -540,6 +556,8 @@ export async function getTicketDetail(
       `${API_URL}/api/tickets/${ticketId}`,
 
       {
+        credentials: "include",
+
         headers: {
           "X-Development-Requester-Id":
             String(
@@ -582,6 +600,8 @@ export async function getTicketAttachments(
       `${API_URL}/api/tickets/${ticketId}/attachments`,
 
       {
+        credentials: "include",
+
         headers: {
           "X-Development-Requester-Id":
             String(
@@ -631,6 +651,8 @@ export async function uploadAttachment(
       `${API_URL}/api/tickets/${ticketId}/attachments`,
 
       {
+        credentials: "include",
+
         method: "POST",
 
         headers: {
@@ -677,6 +699,8 @@ export async function removeAttachment(
       `${API_URL}/api/attachments/${attachmentId}`,
 
       {
+        credentials: "include",
+
         method: "DELETE",
 
         headers: {
@@ -727,6 +751,8 @@ export async function downloadAttachment(
       `${API_URL}/api/attachments/${attachmentId}/download`,
 
       {
+        credentials: "include",
+
         headers: {
           "X-Development-Requester-Id":
             String(

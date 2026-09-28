@@ -1,3 +1,4 @@
+import { requesterCompletionRouter } from "./requester-completion.js";
 import { adminUsersRouter } from "./admin-users.js";
 import { staffQueueRouter } from "./staff-queue.js";
 import { staffTicketOperationsRouter } from "./staff-ticket-operations.js";
@@ -463,6 +464,10 @@ app.use(
 app.use(
   "/api/staff/tickets",
   staffTicketOperationsRouter
+);
+app.use(
+  "/api/tickets",
+  requesterCompletionRouter
 );
 app.use("/api", (req, res, next) => {
   if (req.path === "/health") {
@@ -1911,6 +1916,9 @@ app.get(
               true,
 
             currentStatus:
+              true,
+
+            requesterResolutionIndicatedAt:
               true,
 
             itPriority: true,
