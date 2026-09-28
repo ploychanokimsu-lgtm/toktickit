@@ -1,3 +1,4 @@
+import RequesterCompletionPanel from "./RequesterCompletionPanel.js";
 import {
   type ChangeEvent,
   useCallback,
@@ -823,6 +824,25 @@ export default function RequesterTicketDetail({
               </div>
             </section>
 
+            <RequesterCompletionPanel
+              ticketId={ticket.id}
+              initialResolutionIndicatedAt={
+                ticket.requesterResolutionIndicatedAt
+              }
+              onResolutionRecorded={(
+                recordedAt
+              ) =>
+                setTicket((current) =>
+                  current
+                    ? {
+                        ...current,
+                        requesterResolutionIndicatedAt:
+                          recordedAt,
+                      }
+                    : current
+                )
+              }
+            />
             <section className="tk-card mt-3">
               <div className="tk-card-body">
                 <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
