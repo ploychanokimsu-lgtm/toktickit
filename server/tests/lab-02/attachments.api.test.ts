@@ -18,6 +18,8 @@ import * as path from "node:path";
 
 import app from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
+import { cookieFor } from "../helpers/test-session.js";
+
 
 const prisma = getPrisma();
 
@@ -34,6 +36,7 @@ describe(
   () => {
     let requesterAId: number;
     let requesterBId: number;
+    let requesterCookie: string;
 
     let ownedTicketId: number;
     let otherTicketId: number;
@@ -44,10 +47,8 @@ describe(
 
     beforeAll(async () => {
       const requesters =
-        await prisma.requesterUser.findMany({
-          where: {
-            isActive: true,
-          },
+        await prisma.user.findMany({
+          where: { isActive: true, role: "REQUESTER" },
 
           orderBy: {
             id: "asc",
@@ -82,8 +83,8 @@ describe(
       requesterAId =
         requesters[0].id;
 
-      requesterBId =
-        requesters[1].id;
+      requesterBId = requesters[1].id;
+      requesterCookie = await cookieFor(requesterAId);
 
       const ownedTicket =
         await prisma.ticket.create({
@@ -114,8 +115,8 @@ describe(
             description:
               "Ticket used to test the Attachment lifecycle.",
 
-            requestedPriority:
-              "MEDIUM",
+            requestedPriority: "MEDIUM",
+            itPriority: "MEDIUM",
 
             currentStatus:
               "NEW",
@@ -151,8 +152,8 @@ describe(
             description:
               "Ticket belonging to a different Requester.",
 
-            requestedPriority:
-              "HIGH",
+            requestedPriority: "HIGH",
+            itPriority: "HIGH",
 
             currentStatus:
               "NEW",
@@ -188,8 +189,8 @@ describe(
             description:
               "Ticket used to test the five active Attachment limit.",
 
-            requestedPriority:
-              "LOW",
+            requestedPriority: "LOW",
+            itPriority: "LOW",
 
             currentStatus:
               "NEW",
@@ -402,12 +403,7 @@ describe(
             .post(
               `/api/tickets/${ownedTicketId}/attachments`
             )
-            .set(
-              "X-Development-Requester-Id",
-              String(
-                requesterAId
-              )
-            )
+            .set("Cookie", requesterCookie)
             .attach(
               "file",
 
@@ -451,12 +447,7 @@ describe(
             .get(
               `/api/tickets/${ownedTicketId}/attachments`
             )
-            .set(
-              "X-Development-Requester-Id",
-              String(
-                requesterAId
-              )
-            )
+            .set("Cookie", requesterCookie)
             .expect(200);
 
         expect(
@@ -476,12 +467,7 @@ describe(
             .post(
               `/api/tickets/${ownedTicketId}/attachments`
             )
-            .set(
-              "X-Development-Requester-Id",
-              String(
-                requesterAId
-              )
-            )
+            .set("Cookie", requesterCookie)
             .attach(
               "file",
 
@@ -524,12 +510,7 @@ describe(
             .post(
               `/api/tickets/${ownedTicketId}/attachments`
             )
-            .set(
-              "X-Development-Requester-Id",
-              String(
-                requesterAId
-              )
-            )
+            .set("Cookie", requesterCookie)
             .attach(
               "file",
 
@@ -562,12 +543,7 @@ describe(
             .post(
               `/api/tickets/${limitTicketId}/attachments`
             )
-            .set(
-              "X-Development-Requester-Id",
-              String(
-                requesterAId
-              )
-            )
+            .set("Cookie", requesterCookie)
             .attach(
               "file",
 
@@ -602,12 +578,7 @@ describe(
             .get(
               `/api/attachments/${activeAttachmentId}/download`
             )
-            .set(
-              "X-Development-Requester-Id",
-              String(
-                requesterAId
-              )
-            )
+            .set("Cookie", requesterCookie)
             .expect(200);
 
         expect(
@@ -628,12 +599,7 @@ describe(
             .post(
               `/api/tickets/${otherTicketId}/attachments`
             )
-            .set(
-              "X-Development-Requester-Id",
-              String(
-                requesterAId
-              )
-            )
+            .set("Cookie", requesterCookie)
             .attach(
               "file",
 
@@ -668,12 +634,7 @@ describe(
             .get(
               `/api/attachments/${otherAttachmentId}/download`
             )
-            .set(
-              "X-Development-Requester-Id",
-              String(
-                requesterAId
-              )
-            )
+            .set("Cookie", requesterCookie)
             .expect(404);
 
         expect(
@@ -693,12 +654,7 @@ describe(
             .delete(
               `/api/attachments/${activeAttachmentId}`
             )
-            .set(
-              "X-Development-Requester-Id",
-              String(
-                requesterAId
-              )
-            )
+            .set("Cookie", requesterCookie)
             .send({
               reason: "x",
             })
@@ -721,12 +677,7 @@ describe(
             .delete(
               `/api/attachments/${activeAttachmentId}`
             )
-            .set(
-              "X-Development-Requester-Id",
-              String(
-                requesterAId
-              )
-            )
+            .set("Cookie", requesterCookie)
             .send({
               reason:
                 "Uploaded the wrong evidence",
@@ -765,12 +716,7 @@ describe(
             .get(
               `/api/tickets/${ownedTicketId}/attachments`
             )
-            .set(
-              "X-Development-Requester-Id",
-              String(
-                requesterAId
-              )
-            )
+            .set("Cookie", requesterCookie)
             .expect(200);
 
         const removed =
@@ -806,12 +752,7 @@ describe(
             .get(
               `/api/attachments/${activeAttachmentId}/download`
             )
-            .set(
-              "X-Development-Requester-Id",
-              String(
-                requesterAId
-              )
-            )
+            .set("Cookie", requesterCookie)
             .expect(404);
 
         expect(
@@ -831,12 +772,7 @@ describe(
             .delete(
               `/api/attachments/${otherAttachmentId}`
             )
-            .set(
-              "X-Development-Requester-Id",
-              String(
-                requesterAId
-              )
-            )
+            .set("Cookie", requesterCookie)
             .send({
               reason:
                 "Should not work",

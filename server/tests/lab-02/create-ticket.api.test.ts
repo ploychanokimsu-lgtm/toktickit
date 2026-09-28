@@ -2,17 +2,20 @@ import { beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import app from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
+import { cookieFor } from "../helpers/test-session.js";
+
 
 const prisma = getPrisma();
 
 describe("Lab 2 Create Ticket API", () => {
   let requesterId: number;
+  let requesterCookie: string;
   let categoryId: number;
   let relatedSystemId: number;
 
   beforeEach(async () => {
-    const requester = await prisma.requesterUser.findFirstOrThrow({
-      where: { isActive: true },
+    const requester = await prisma.user.findFirstOrThrow({
+      where: { isActive: true, role: "REQUESTER" },
       orderBy: { id: "asc" },
     });
 
@@ -27,6 +30,7 @@ describe("Lab 2 Create Ticket API", () => {
     });
 
     requesterId = requester.id;
+    requesterCookie = await cookieFor(requesterId);
     categoryId = category.id;
     relatedSystemId = relatedSystem.id;
   });
@@ -34,6 +38,7 @@ describe("Lab 2 Create Ticket API", () => {
   it("returns active Related Systems", async () => {
     const response = await request(app)
       .get("/api/related-systems")
+      .set("Cookie", requesterCookie)
       .expect(200);
 
     expect(response.body.relatedSystems).toBeInstanceOf(Array);
@@ -52,9 +57,9 @@ describe("Lab 2 Create Ticket API", () => {
   it("creates a valid Ticket and returns its official Ticket Number", async () => {
     const response = await request(app)
       .post("/api/tickets")
+      .set("Cookie", requesterCookie)
       .send({
         clientSubmissionId: crypto.randomUUID(),
-        requesterId,
         categoryId,
         relatedSystemId,
         summary: "Laptop battery drains very quickly",
@@ -93,9 +98,9 @@ describe("Lab 2 Create Ticket API", () => {
   it("rejects a Ticket with a missing Summary", async () => {
     const response = await request(app)
       .post("/api/tickets")
+      .set("Cookie", requesterCookie)
       .send({
         clientSubmissionId: crypto.randomUUID(),
-        requesterId,
         categoryId,
         relatedSystemId,
         summary: "",
@@ -111,9 +116,9 @@ describe("Lab 2 Create Ticket API", () => {
   it("rejects a Summary shorter than 5 characters after trimming", async () => {
     const response = await request(app)
       .post("/api/tickets")
+      .set("Cookie", requesterCookie)
       .send({
         clientSubmissionId: crypto.randomUUID(),
-        requesterId,
         categoryId,
         relatedSystemId,
         summary: " abc ",
@@ -129,9 +134,9 @@ describe("Lab 2 Create Ticket API", () => {
   it("rejects a Description shorter than 10 characters after trimming", async () => {
     const response = await request(app)
       .post("/api/tickets")
+      .set("Cookie", requesterCookie)
       .send({
         clientSubmissionId: crypto.randomUUID(),
-        requesterId,
         categoryId,
         relatedSystemId,
         summary: "Laptop battery problem",
@@ -146,9 +151,9 @@ describe("Lab 2 Create Ticket API", () => {
   it("rejects an invalid Requested Priority", async () => {
     const response = await request(app)
       .post("/api/tickets")
+      .set("Cookie", requesterCookie)
       .send({
         clientSubmissionId: crypto.randomUUID(),
-        requesterId,
         categoryId,
         relatedSystemId,
         summary: "Laptop battery problem",
@@ -161,9 +166,9 @@ describe("Lab 2 Create Ticket API", () => {
     expect(response.body.error.code).toBe("VALIDATION_ERROR");
   });
 
-  it("rejects an inactive Development Requester", async () => {
+  it("ignores a forged inactive requester ID and uses the session owner", async () => {
     const inactiveRequester =
-      await prisma.requesterUser.findFirstOrThrow({
+      await prisma.user.findFirstOrThrow({
         where: {
           isActive: false,
         },
@@ -171,6 +176,7 @@ describe("Lab 2 Create Ticket API", () => {
 
     const response = await request(app)
       .post("/api/tickets")
+      .set("Cookie", requesterCookie)
       .send({
         clientSubmissionId: crypto.randomUUID(),
         requesterId: inactiveRequester.id,
@@ -181,17 +187,18 @@ describe("Lab 2 Create Ticket API", () => {
         description:
           "The laptop battery is draining much faster than expected.",
       })
-      .expect(400);
+      .expect(201);
 
-    expect(response.body.error.code).toBe("VALIDATION_ERROR");
+    expect(response.body.ticket.requesterId).toBe(requesterId);
+    expect(response.body.ticket.requesterId).not.toBe(inactiveRequester.id);
   });
 
   it("trims Summary and Description before saving", async () => {
     const response = await request(app)
       .post("/api/tickets")
+      .set("Cookie", requesterCookie)
       .send({
         clientSubmissionId: crypto.randomUUID(),
-        requesterId,
         categoryId,
         relatedSystemId,
         summary: "   Laptop battery problem   ",

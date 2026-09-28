@@ -1720,7 +1720,17 @@ function MyTicketsScreen({
 // Main App
 // ============================================================
 
-export default function App() {
+interface AppProps {
+  authenticatedRequester?:
+    DevelopmentRequester;
+
+  onLogout?: () => Promise<void>;
+}
+
+export default function App({
+  authenticatedRequester,
+  onLogout,
+}: AppProps) {
   const [requesters, setRequesters] =
     useState<
       DevelopmentRequester[]
@@ -1736,7 +1746,7 @@ export default function App() {
     setCurrentRequester,
   ] =
     useState<DevelopmentRequester | null>(
-      null
+      authenticatedRequester ?? null
     );
 
   const [
@@ -1767,6 +1777,25 @@ export default function App() {
 
   const loadRequesters =
     useCallback(async () => {
+      if (authenticatedRequester) {
+        setRequesters([
+          authenticatedRequester,
+        ]);
+
+        setSelectedId(
+          String(
+            authenticatedRequester.id
+          )
+        );
+
+        setCurrentRequester(
+          authenticatedRequester
+        );
+
+        setViewState("ready");
+        setErrorMessage("");
+        return;
+      }
       setViewState("loading");
       setErrorMessage("");
 
@@ -1832,7 +1861,7 @@ export default function App() {
 
         setViewState("error");
       }
-    }, []);
+    }, [authenticatedRequester]);
 
   useEffect(() => {
     void loadRequesters();
@@ -1893,15 +1922,29 @@ export default function App() {
                 </strong>
               </span>
 
-              <button
-                type="button"
-                className="tk-button tk-button-secondary tk-button-sm"
-                onClick={
-                  handleChangeRequester
-                }
-              >
-                Change Requester
-              </button>
+              {authenticatedRequester ? (
+                <button
+                  type="button"
+                  className="tk-button tk-button-secondary tk-button-sm"
+                  onClick={() => {
+                    if (onLogout) {
+                      void onLogout();
+                    }
+                  }}
+                >
+                  Sign out
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="tk-button tk-button-secondary tk-button-sm"
+                  onClick={
+                    handleChangeRequester
+                  }
+                >
+                  Change Requester
+                </button>
+              )}
             </div>
           </div>
         </header>

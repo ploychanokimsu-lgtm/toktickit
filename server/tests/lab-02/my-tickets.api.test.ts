@@ -1,4 +1,4 @@
-import {
+﻿import {
   afterAll,
   beforeAll,
   describe,
@@ -10,6 +10,8 @@ import request from "supertest";
 
 import app from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
+import { cookieFor } from "../helpers/test-session.js";
+
 
 const prisma = getPrisma();
 
@@ -33,6 +35,8 @@ describe("Lab 2 My Tickets API", () => {
   let requesterAId: number;
   let requesterBId: number;
   let inactiveRequesterId: number;
+  let requesterCookie: string;
+  let inactiveCookie: string;
 
   let categoryAId: number;
   let categoryBId: number;
@@ -42,10 +46,8 @@ describe("Lab 2 My Tickets API", () => {
 
   beforeAll(async () => {
     const activeRequesters =
-      await prisma.requesterUser.findMany({
-        where: {
-          isActive: true,
-        },
+      await prisma.user.findMany({
+        where: { isActive: true, role: "REQUESTER" },
         orderBy: {
           id: "asc",
         },
@@ -59,7 +61,7 @@ describe("Lab 2 My Tickets API", () => {
     }
 
     const inactiveRequester =
-      await prisma.requesterUser.findFirstOrThrow({
+      await prisma.user.findFirstOrThrow({
         where: {
           isActive: false,
         },
@@ -102,6 +104,8 @@ describe("Lab 2 My Tickets API", () => {
     requesterAId = activeRequesters[0].id;
     requesterBId = activeRequesters[1].id;
     inactiveRequesterId = inactiveRequester.id;
+    requesterCookie = await cookieFor(requesterAId);
+    inactiveCookie = await cookieFor(inactiveRequesterId);
 
     categoryAId = categories[0].id;
     categoryBId = categories[1].id;
@@ -121,6 +125,7 @@ describe("Lab 2 My Tickets API", () => {
           description:
             "The VPN connection disconnects repeatedly during normal use.",
           requestedPriority: "MEDIUM",
+          itPriority: "MEDIUM",
           currentStatus: "NEW",
           createdAt: new Date(
             "2026-08-28T08:00:00.000Z"
@@ -139,6 +144,7 @@ describe("Lab 2 My Tickets API", () => {
           description:
             "The corporate laptop battery loses charge much faster than expected.",
           requestedPriority: "HIGH",
+          itPriority: "HIGH",
           currentStatus: "NEW",
           createdAt: new Date(
             "2026-08-29T08:00:00.000Z"
@@ -157,6 +163,7 @@ describe("Lab 2 My Tickets API", () => {
           description:
             "The requester cannot access the company email service.",
           requestedPriority: "LOW",
+          itPriority: "LOW",
           currentStatus: "NEW",
           createdAt: new Date(
             "2026-08-30T08:00:00.000Z"
@@ -175,6 +182,7 @@ describe("Lab 2 My Tickets API", () => {
           description:
             "This ticket must never appear in Requester A results.",
           requestedPriority: "HIGH",
+          itPriority: "HIGH",
           currentStatus: "NEW",
           createdAt: new Date(
             "2026-08-31T08:00:00.000Z"
@@ -197,27 +205,24 @@ describe("Lab 2 My Tickets API", () => {
     });
   });
 
-  it("requires a Development Requester context", async () => {
+  it("requires a signed-in session", async () => {
     const response = await request(app)
       .get("/api/tickets")
-      .expect(400);
+      .expect(401);
 
     expect(response.body.error.code).toBe(
-      "REQUESTER_CONTEXT_REQUIRED"
+      "UNAUTHENTICATED"
     );
   });
 
-  it("rejects an inactive Development Requester context", async () => {
+  it("rejects an inactive requester session", async () => {
     const response = await request(app)
       .get("/api/tickets")
-      .set(
-        "X-Development-Requester-Id",
-        String(inactiveRequesterId)
-      )
-      .expect(400);
+      .set("Cookie", inactiveCookie)
+      .expect(401);
 
     expect(response.body.error.code).toBe(
-      "INVALID_REQUESTER_CONTEXT"
+      "UNAUTHENTICATED"
     );
   });
 
@@ -228,10 +233,7 @@ describe("Lab 2 My Tickets API", () => {
           uniqueMarker
         )}&page=1&pageSize=10`
       )
-      .set(
-        "X-Development-Requester-Id",
-        String(requesterAId)
-      )
+      .set("Cookie", requesterCookie)
       .expect(200);
 
     const returnedNumbers =
@@ -264,10 +266,7 @@ describe("Lab 2 My Tickets API", () => {
           uniqueMarker
         )}&page=1&pageSize=10`
       )
-      .set(
-        "X-Development-Requester-Id",
-        String(requesterAId)
-      )
+      .set("Cookie", requesterCookie)
       .expect(200);
 
     const numbers =
@@ -290,10 +289,7 @@ describe("Lab 2 My Tickets API", () => {
           `${uniqueMarker} Laptop`
         )}&page=1&pageSize=10`
       )
-      .set(
-        "X-Development-Requester-Id",
-        String(requesterAId)
-      )
+      .set("Cookie", requesterCookie)
       .expect(200);
 
     expect(response.body.tickets).toHaveLength(1);
@@ -310,10 +306,7 @@ describe("Lab 2 My Tickets API", () => {
           ticketNumbers.a1
         )}&page=1&pageSize=10`
       )
-      .set(
-        "X-Development-Requester-Id",
-        String(requesterAId)
-      )
+      .set("Cookie", requesterCookie)
       .expect(200);
 
     expect(response.body.tickets).toHaveLength(1);
@@ -330,10 +323,7 @@ describe("Lab 2 My Tickets API", () => {
           uniqueMarker
         )}&categoryId=${categoryBId}&requestedPriority=HIGH&page=1&pageSize=10`
       )
-      .set(
-        "X-Development-Requester-Id",
-        String(requesterAId)
-      )
+      .set("Cookie", requesterCookie)
       .expect(200);
 
     expect(response.body.tickets).toHaveLength(1);
@@ -350,10 +340,7 @@ describe("Lab 2 My Tickets API", () => {
           uniqueMarker
         )}&relatedSystemId=${relatedSystemAId}&page=1&pageSize=10`
       )
-      .set(
-        "X-Development-Requester-Id",
-        String(requesterAId)
-      )
+      .set("Cookie", requesterCookie)
       .expect(200);
 
     expect(response.body.tickets).toHaveLength(1);
@@ -370,10 +357,7 @@ describe("Lab 2 My Tickets API", () => {
           uniqueMarker
         )}&sortBy=updatedAt&sortOrder=asc&page=1&pageSize=10`
       )
-      .set(
-        "X-Development-Requester-Id",
-        String(requesterAId)
-      )
+      .set("Cookie", requesterCookie)
       .expect(200);
 
     const numbers =
@@ -396,10 +380,7 @@ describe("Lab 2 My Tickets API", () => {
           uniqueMarker
         )}&page=1&pageSize=10`
       )
-      .set(
-        "X-Development-Requester-Id",
-        String(requesterAId)
-      )
+      .set("Cookie", requesterCookie)
       .expect(200);
 
     expect(response.body.tickets).toHaveLength(3);
@@ -419,10 +400,7 @@ describe("Lab 2 My Tickets API", () => {
           `${uniqueMarker}-NO-MATCH`
         )}&page=1&pageSize=10`
       )
-      .set(
-        "X-Development-Requester-Id",
-        String(requesterAId)
-      )
+      .set("Cookie", requesterCookie)
       .expect(200);
 
     expect(response.body.tickets).toEqual([]);
@@ -438,10 +416,7 @@ describe("Lab 2 My Tickets API", () => {
   it("rejects an unsupported page size", async () => {
     const response = await request(app)
       .get("/api/tickets?page=1&pageSize=15")
-      .set(
-        "X-Development-Requester-Id",
-        String(requesterAId)
-      )
+      .set("Cookie", requesterCookie)
       .expect(400);
 
     expect(response.body.error.code).toBe(

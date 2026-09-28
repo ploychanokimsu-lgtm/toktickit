@@ -203,6 +203,9 @@ export interface TicketDetail {
     | RequestedPriority
     | null;
 
+  requesterResolutionIndicatedAt:
+    string | null;
+
   createdAt:
     string;
 
@@ -283,7 +286,10 @@ export async function checkSystem(): Promise<SystemStatus> {
 
     const categoriesResponse =
       await fetch(
-        `${API_URL}/api/categories`
+        `${API_URL}/api/categories`,
+      {
+          credentials: "include",
+        }
       );
 
     if (
@@ -335,7 +341,10 @@ export async function getCategories(): Promise<
 > {
   const response =
     await fetch(
-      `${API_URL}/api/categories`
+      `${API_URL}/api/categories`,
+    {
+          credentials: "include",
+        }
     );
 
   if (!response.ok) {
@@ -354,7 +363,10 @@ export async function getRelatedSystems(): Promise<
 > {
   const response =
     await fetch(
-      `${API_URL}/api/related-systems`
+      `${API_URL}/api/related-systems`,
+    {
+          credentials: "include",
+        }
     );
 
   if (!response.ok) {
@@ -381,6 +393,8 @@ export async function createTicket(
       `${API_URL}/api/tickets`,
 
       {
+        credentials: "include",
+
         method: "POST",
 
         headers: {
@@ -504,6 +518,8 @@ export async function getMyTickets(
       `${API_URL}/api/tickets?${params.toString()}`,
 
       {
+        credentials: "include",
+
         headers: {
           "X-Development-Requester-Id":
             String(
@@ -540,6 +556,8 @@ export async function getTicketDetail(
       `${API_URL}/api/tickets/${ticketId}`,
 
       {
+        credentials: "include",
+
         headers: {
           "X-Development-Requester-Id":
             String(
@@ -582,6 +600,8 @@ export async function getTicketAttachments(
       `${API_URL}/api/tickets/${ticketId}/attachments`,
 
       {
+        credentials: "include",
+
         headers: {
           "X-Development-Requester-Id":
             String(
@@ -631,6 +651,8 @@ export async function uploadAttachment(
       `${API_URL}/api/tickets/${ticketId}/attachments`,
 
       {
+        credentials: "include",
+
         method: "POST",
 
         headers: {
@@ -677,6 +699,8 @@ export async function removeAttachment(
       `${API_URL}/api/attachments/${attachmentId}`,
 
       {
+        credentials: "include",
+
         method: "DELETE",
 
         headers: {
@@ -727,6 +751,8 @@ export async function downloadAttachment(
       `${API_URL}/api/attachments/${attachmentId}/download`,
 
       {
+        credentials: "include",
+
         headers: {
           "X-Development-Requester-Id":
             String(
@@ -750,4 +776,261 @@ export async function downloadAttachment(
   }
 
   return await response.blob();
+}
+
+// ============================================================
+// Lab 3 IT Staff Ticket Queue
+// ============================================================
+
+export type UserRole =
+  | "REQUESTER"
+  | "IT_STAFF"
+  | "ADMINISTRATOR";
+
+export type TicketStatus =
+  | "NEW"
+  | "OPEN"
+  | "IN_PROGRESS"
+  | "WAITING_FOR_REQUESTER"
+  | "RESOLVED"
+  | "CLOSED"
+  | "REOPENED"
+  | "CANCELLED";
+
+export interface AuthenticatedUser {
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
+  mustChangePassword: boolean;
+}
+
+export interface StaffQueueTicket {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  requestedPriority: RequestedPriority;
+  itPriority: RequestedPriority;
+  currentStatus: TicketStatus;
+  ownerId: number | null;
+  createdAt: string;
+  updatedAt: string;
+
+  category: {
+    id: number;
+    name: string;
+  };
+
+  owner: {
+    id: number;
+    name: string;
+  } | null;
+}
+
+export interface StaffQueuePagination {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
+
+export interface StaffQueueResponse {
+  tickets: StaffQueueTicket[];
+  pagination: StaffQueuePagination;
+}
+
+export interface StaffQueueQuery {
+  search?: string;
+  categoryId?: number;
+  requestedPriority?: RequestedPriority | "";
+  itPriority?: RequestedPriority | "";
+  status?: TicketStatus | "";
+  assignment?:
+    | "all"
+    | "assigned"
+    | "unassigned"
+    | "mine";
+  ownerId?: number;
+  sort?:
+    | "updatedAt"
+    | "createdAt"
+    | "ticketNumber"
+    | "requestedPriority"
+    | "itPriority"
+    | "status";
+  direction?: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
+}
+
+export class ApiRequestError extends Error {
+  status: number;
+  code?: string;
+
+  constructor(
+    message: string,
+    status: number,
+    code?: string
+  ) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
+async function readApiFailure(
+  response: Response,
+  fallback: string
+): Promise<ApiRequestError> {
+  try {
+    const data = (await response.json()) as {
+      error?: {
+        code?: string;
+        message?: string;
+      };
+    };
+
+    return new ApiRequestError(
+      data.error?.message ?? fallback,
+      response.status,
+      data.error?.code
+    );
+  } catch {
+    return new ApiRequestError(
+      fallback,
+      response.status
+    );
+  }
+}
+
+export async function getCurrentUser(): Promise<
+  AuthenticatedUser
+> {
+  const response = await fetch(
+    `${API_URL}/api/auth/me`,
+    {
+      credentials: "include",
+    }
+  );
+
+  if (!response.ok) {
+    throw await readApiFailure(
+      response,
+      "Unable to verify the current user."
+    );
+  }
+
+  const data = (await response.json()) as {
+    user: AuthenticatedUser;
+  };
+
+  return data.user;
+}
+
+export async function getStaffQueueCategories(): Promise<
+  Category[]
+> {
+  const response = await fetch(
+    `${API_URL}/api/categories`,
+    {
+      credentials: "include",
+    }
+  );
+
+  if (!response.ok) {
+    throw await readApiFailure(
+      response,
+      "Unable to load Categories."
+    );
+  }
+
+  return (await response.json()) as Category[];
+}
+
+export async function getStaffTicketQueue(
+  query: StaffQueueQuery = {}
+): Promise<StaffQueueResponse> {
+  const params = new URLSearchParams();
+
+  if (query.search?.trim()) {
+    params.set("search", query.search.trim());
+  }
+
+  if (query.categoryId) {
+    params.set(
+      "categoryId",
+      String(query.categoryId)
+    );
+  }
+
+  if (query.requestedPriority) {
+    params.set(
+      "requestedPriority",
+      query.requestedPriority
+    );
+  }
+
+  if (query.itPriority) {
+    params.set(
+      "itPriority",
+      query.itPriority
+    );
+  }
+
+  if (query.status) {
+    params.set("status", query.status);
+  }
+
+  if (query.assignment) {
+    params.set(
+      "assignment",
+      query.assignment
+    );
+  }
+
+  if (query.ownerId) {
+    params.set(
+      "ownerId",
+      String(query.ownerId)
+    );
+  }
+
+  params.set(
+    "sort",
+    query.sort ?? "updatedAt"
+  );
+
+  params.set(
+    "direction",
+    query.direction ?? "desc"
+  );
+
+  params.set(
+    "page",
+    String(query.page ?? 1)
+  );
+
+  params.set(
+    "pageSize",
+    String(query.pageSize ?? 10)
+  );
+
+  const response = await fetch(
+    `${API_URL}/api/staff/tickets?${params.toString()}`,
+    {
+      credentials: "include",
+    }
+  );
+
+  if (!response.ok) {
+    throw await readApiFailure(
+      response,
+      "Unable to load the IT Staff Ticket Queue."
+    );
+  }
+
+  return (await response.json()) as StaffQueueResponse;
 }
