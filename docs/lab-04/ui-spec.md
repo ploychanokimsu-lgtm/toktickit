@@ -21,7 +21,9 @@ Issue: #55. This document extends `docs/lab-03/ui-specs.md` and `docs/lab-02/ui-
 | IT Staff | Dashboard · Ticket Queue | Dashboard |
 | Administrator | Dashboard · Ticket Queue · User Management | Dashboard |
 
-- The active link uses the existing `tk-nav-link active` style plus a 3px underline, so it is not distinguished by color alone. It also carries `aria-current="page"`.
+- The navigation is a light bar directly under the green header, with green link text. (In Labs 2–3 the links kept the white header colour after being moved below the header, which made them unreadable.)
+- The active link has a pale-green background plus a 3px underline, so it is not distinguished by color alone. It also carries `aria-current="page"`.
+- My Tickets shows each Ticket's real status badge. (Labs 2–3 always showed "New".)
 - The header keeps the user name, role badge, and Logout from Lab 3.
 - On mobile (< 768px), navigation collapses into the existing Lab 3 mobile menu pattern. There is no horizontal scrolling.
 

@@ -1,3 +1,5 @@
+import RequesterDashboard from "./RequesterDashboard.js";
+import TicketStatusBadge from "./components/TicketStatusBadge.js";
 import {
   type FormEvent,
   useCallback,
@@ -32,9 +34,27 @@ type RequesterViewState =
   | "error";
 
 type AppScreen =
+  | "dashboard"
   | "create"
   | "myTickets"
   | "ticketDetail";
+
+// Lab 4: My Tickets status filter options (dashboard drill-down).
+const ACTIVE_STATUS_FILTER =
+  "NEW,OPEN,IN_PROGRESS,WAITING_FOR_REQUESTER,REOPENED";
+
+const STATUS_FILTER_OPTIONS: Array<[string, string]> = [
+  ["", "All statuses"],
+  [ACTIVE_STATUS_FILTER, "Open (all active)"],
+  ["NEW", "New"],
+  ["OPEN", "Open"],
+  ["IN_PROGRESS", "In Progress"],
+  ["WAITING_FOR_REQUESTER", "Waiting For Requester"],
+  ["RESOLVED", "Resolved"],
+  ["CLOSED", "Closed"],
+  ["REOPENED", "Reopened"],
+  ["CANCELLED", "Cancelled"],
+];
 
 interface FormErrors {
   categoryId?: string;
@@ -799,12 +819,17 @@ function CreateTicketScreen({
 function MyTicketsScreen({
   requester,
   onOpenTicket,
+  initialStatus = "",
 }: {
   requester: DevelopmentRequester;
   onOpenTicket: (
     ticketId: number
   ) => void;
+  initialStatus?: string;
 }) {
+  const [statusFilter, setStatusFilter] =
+    useState(initialStatus);
+
   const [tickets, setTickets] =
     useState<TicketListItem[]>([]);
 
@@ -948,7 +973,9 @@ function MyTicketsScreen({
                   : undefined,
 
               requestedPriority,
-
+              status:
+                statusFilter ||
+                undefined,
               sortBy,
               sortOrder,
               page,
@@ -999,6 +1026,7 @@ function MyTicketsScreen({
       categoryId,
       relatedSystemId,
       requestedPriority,
+      statusFilter,
       sortValue,
       page,
       pageSize,
@@ -1042,6 +1070,7 @@ function MyTicketsScreen({
     setCategoryId("");
     setRelatedSystemId("");
     setRequestedPriority("");
+    setStatusFilter("");
     setSortValue(
       "updatedAt:desc"
     );
@@ -1057,7 +1086,8 @@ function MyTicketsScreen({
     ) ||
     Boolean(
       requestedPriority
-    );
+    ) ||
+    Boolean(statusFilter);
 
   return (
     <main className="tk-page">
@@ -1205,6 +1235,50 @@ function MyTicketsScreen({
                           {
                             system.name
                           }
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
+              </div>
+
+              <div className="col-md-6 col-lg-2">
+                <div className="tk-form-group">
+                  <label
+                    htmlFor="filter-status"
+                    className="tk-label"
+                  >
+                    Status
+                  </label>
+
+                  <select
+                    id="filter-status"
+                    className="tk-select"
+                    value={statusFilter}
+                    onChange={(event) => {
+                      setStatusFilter(
+                        event.target.value
+                      );
+                      setPage(1);
+                    }}
+                  >
+                    {STATUS_FILTER_OPTIONS.some(
+                      ([value]) =>
+                        value === statusFilter
+                    )
+                      ? null
+                      : (
+                        <option value={statusFilter}>
+                          {statusFilter}
+                        </option>
+                      )}
+                    {STATUS_FILTER_OPTIONS.map(
+                      ([value, label]) => (
+                        <option
+                          key={value || "all"}
+                          value={value}
+                        >
+                          {label}
                         </option>
                       )
                     )}
@@ -1497,9 +1571,11 @@ function MyTicketsScreen({
                               </td>
 
                               <td>
-                                <span className="tk-badge tk-badge-new">
-                                  New
-                                </span>
+                                <TicketStatusBadge
+                                  status={
+                                    ticket.currentStatus
+                                  }
+                                />
                               </td>
 
                               <td>
@@ -1582,9 +1658,11 @@ function MyTicketsScreen({
                                 }
                               </span>
 
-                              <span className="tk-badge tk-badge-new">
-                                New
-                              </span>
+                              <TicketStatusBadge
+                                status={
+                                  ticket.currentStatus
+                                }
+                              />
                             </div>
 
                             <p className="tk-help-text mt-2 mb-0">
@@ -1766,7 +1844,17 @@ export default function App({
     activeScreen,
     setActiveScreen,
   ] =
-    useState<AppScreen>("create");
+    useState<AppScreen>(
+      // Lab 4: signed-in Requesters land on the Dashboard.
+      authenticatedRequester
+        ? "dashboard"
+        : "create"
+    );
+
+  const [
+    myTicketsStatus,
+    setMyTicketsStatus,
+  ] = useState("");
 
   const [
     selectedTicketId,
@@ -1953,6 +2041,35 @@ export default function App({
           className="tk-nav"
           aria-label="Main navigation"
         >
+          {authenticatedRequester && (
+            <button
+              type="button"
+              className={`tk-nav-link ${
+                activeScreen ===
+                "dashboard"
+                  ? "active"
+                  : ""
+              }`}
+              aria-current={
+                activeScreen ===
+                "dashboard"
+                  ? "page"
+                  : undefined
+              }
+              onClick={() => {
+                setSelectedTicketId(
+                  null
+                );
+
+                setActiveScreen(
+                  "dashboard"
+                );
+              }}
+            >
+              Dashboard
+            </button>
+          )}
+
           <button
             type="button"
             className={`tk-nav-link ${
@@ -1975,6 +2092,8 @@ export default function App({
               setSelectedTicketId(
                 null
               );
+
+              setMyTicketsStatus("");
 
               setActiveScreen(
                 "myTickets"
@@ -2013,6 +2132,38 @@ export default function App({
         </nav>
 
         {activeScreen ===
+          "dashboard" && (
+          <RequesterDashboard
+            requesterName={
+              currentRequester.name
+            }
+            onDrillDown={(status) => {
+              setMyTicketsStatus(status);
+              setActiveScreen(
+                "myTickets"
+              );
+            }}
+            onOpenTicket={(ticketId) => {
+              setSelectedTicketId(
+                ticketId
+              );
+              setActiveScreen(
+                "ticketDetail"
+              );
+            }}
+            onCreateTicket={() =>
+              setActiveScreen("create")
+            }
+            onViewMyTickets={() => {
+              setMyTicketsStatus("");
+              setActiveScreen(
+                "myTickets"
+              );
+            }}
+          />
+        )}
+
+        {activeScreen ===
           "create" && (
           <CreateTicketScreen
             requester={
@@ -2024,6 +2175,10 @@ export default function App({
         {activeScreen ===
           "myTickets" && (
           <MyTicketsScreen
+            key={myTicketsStatus}
+            initialStatus={
+              myTicketsStatus
+            }
             requester={
               currentRequester
             }

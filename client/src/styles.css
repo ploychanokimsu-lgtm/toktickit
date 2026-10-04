@@ -900,3 +900,223 @@ textarea {
     min-height: 44px;
   }
 }
+
+/* ------------------------------------------------------------
+   Lab 4 - Dashboards
+------------------------------------------------------------ */
+
+.tk-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.tk-metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--tk-border);
+  border-radius: var(--tk-radius);
+  background: var(--tk-surface);
+  box-shadow: var(--tk-shadow);
+}
+
+.tk-metric-card-attention {
+  border-left: 4px solid var(--tk-warning);
+}
+
+.tk-metric-label {
+  margin: 0;
+  color: var(--tk-text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.tk-metric-value {
+  margin: 0;
+  color: var(--tk-text);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.tk-metric-note {
+  margin: 0;
+  color: var(--tk-warning);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.tk-metric-link {
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--tk-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.tk-metric-link:hover {
+  color: var(--tk-secondary);
+}
+
+.tk-metric-link:focus-visible,
+.tk-dashboard-ticket-link:focus-visible,
+.tk-quick-actions button:focus-visible {
+  outline: 3px solid var(--tk-secondary);
+  outline-offset: 2px;
+}
+
+.tk-dashboard-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.tk-dashboard-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.tk-dashboard-tickets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tk-dashboard-tickets li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--tk-border);
+}
+
+.tk-dashboard-tickets li:last-child {
+  border-bottom: none;
+}
+
+.tk-dashboard-ticket-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--tk-primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.tk-dashboard-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tk-dashboard-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--tk-text-muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.tk-quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (max-width: 1199px) {
+  .tk-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tk-dashboard-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .tk-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .tk-metric-value {
+    font-size: 1.6rem;
+  }
+
+  .tk-dashboard-tickets li {
+    grid-template-columns: 1fr;
+  }
+
+  .tk-dashboard-meta {
+    white-space: normal;
+    flex-wrap: wrap;
+  }
+
+  .tk-metric-link,
+  .tk-quick-actions button {
+    min-height: 44px;
+  }
+}
+
+/* ------------------------------------------------------------
+   Lab 4 - Navigation bar under the header
+   The role navigation sits below the green header, so it needs
+   dark text on a light bar (it was white on the page background).
+------------------------------------------------------------ */
+
+.tk-app > .tk-nav {
+  width: 100%;
+  min-height: 52px;
+  padding: 6px max(16px, calc((100% - 1200px) / 2));
+  flex-wrap: wrap;
+  background: var(--tk-surface);
+  border-bottom: 1px solid var(--tk-border);
+}
+
+.tk-app > .tk-nav .tk-nav-link {
+  min-height: 40px;
+  border: 0;
+  background: transparent;
+  color: var(--tk-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tk-app > .tk-nav .tk-nav-link:hover {
+  color: var(--tk-secondary);
+  background: var(--tk-pale-green);
+}
+
+.tk-app > .tk-nav .tk-nav-link.active {
+  color: var(--tk-primary);
+  background: var(--tk-pale-green);
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 6px;
+}
+
+.tk-app > .tk-nav .tk-nav-link:focus-visible {
+  outline: 3px solid var(--tk-secondary);
+  outline-offset: 2px;
+}
+
+.tk-dashboard-ticket-link {
+  justify-self: start;
+  text-align: left;
+}
