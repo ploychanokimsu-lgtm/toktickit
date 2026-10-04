@@ -616,13 +616,13 @@ textarea {
 }
 
 .tk-admin-you {
-  color: var(--tk-muted);
+  color: var(--tk-text-muted);
   font-size: 0.875rem;
 }
 
 .tk-admin-empty {
   padding: 28px 0;
-  color: var(--tk-muted);
+  color: var(--tk-text-muted);
   text-align: center;
 }
 

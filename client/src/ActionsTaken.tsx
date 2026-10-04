@@ -1,3 +1,4 @@
+import { formatDateTime } from "./format.js";
 import {
   type FormEvent,
   useCallback,
@@ -64,7 +65,7 @@ const LIMITS = {
 };
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleString();
+  return formatDateTime(value);
 }
 
 function pad(value: number): string {

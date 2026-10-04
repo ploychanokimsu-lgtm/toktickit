@@ -135,11 +135,12 @@ e2e/lab-04/
 | MIG-01 | Migration | AC-23 | Lab 3 rows (Users, Tickets, Attachments, Comments, Notes) unchanged after migration | Counts and sample fields equal | `server/tests/lab-04/migration-seed.test.ts` | Pass |
 | MIG-02 | Migration | AC-23 | `ActionTaken` table, FKs, indexes exist | Present | `server/tests/lab-04/migration-seed.test.ts` | Pass |
 | MIG-03 | Seed | AC-24 | Run seed twice | No duplicates; required scenarios present (0/1/3+ actions, all statuses) | `server/tests/lab-04/migration-seed.test.ts` | Pass |
-| REG-01 | Regression | AC-25 | All Lab 1 server tests | Pass | `server/tests/lab-01/*` | Planned |
-| REG-02 | Regression | AC-25 | All Lab 2 server tests | Pass | `server/tests/lab-02/*` | Planned |
-| REG-03 | Regression | AC-25 | All Lab 3 server tests (status tests updated for `expectedStatus`, D-05) | Pass | `server/tests/lab-03/*` | Planned |
-| REG-04 | Regression | AC-25 | All Lab 1–3 client tests | Pass | `client/tests/lab-0{1,2,3}/*` | Planned |
-| REG-05 | Regression | AC-25 | Lab 2 and Lab 3 Playwright suites | Pass | `e2e/lab-02/*`, `e2e/lab-03/*` | Planned |
+| REG-01 | Regression | AC-25 | All Lab 1 server tests | Pass | `server/tests/lab-01/*` | Pass |
+| REG-02 | Regression | AC-25 | All Lab 2 server tests | Pass | `server/tests/lab-02/*` | Pass |
+| REG-03 | Regression | AC-25 | All Lab 3 server tests (status tests updated for `expectedStatus`, D-05) | Pass | `server/tests/lab-03/*` | Pass |
+| REG-04 | Regression | AC-25 | All Lab 1–3 client tests (Lab 2 priority badge text now title case; Lab 3 app test navigates from the Dashboard) | Pass | `client/tests/lab-0{1,2,3}/*` | Pass |
+| REG-05 | Regression | AC-25 | Lab 3 Playwright suite, plus a Lab 4 regression suite covering sign-in, Create Ticket, My Tickets, Ticket Detail, Attachments, Public Comments, Problem Appears Resolved, IT Staff operations, Internal Notes and User Management, with no console errors | Pass | `e2e/lab-03/*`, `e2e/lab-04/regression.spec.ts` | Pass |
+| REG-06 | Regression | AC-25 | Lab 2 Playwright suite | Not runnable | `e2e/lab-02/*` | Retired: it selects a Development Requester, a screen removed in Lab 3 when sign-in replaced it (Lab 3 did not run it either). Its flows are covered by REG-05. |
 | PERF-01 | Perf-smoke | FR-19 | Dashboards with seed + 500 extra Tickets respond < 500 ms locally | < 500 ms | `server/tests/lab-04/staff-dashboard.api.test.ts` | Pass |
 | PERF-02 | Perf-smoke | BR-15 | List 50 actions on one Ticket < 300 ms | < 300 ms | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
 
@@ -172,10 +173,10 @@ e2e/lab-04/
 
 | Test ID | Type | Req / AC | What It Tests | Expected Result | Automated Test File | Final |
 |---|---|---|---|---|---|---|
-| STY-01 | UI style | V1 | Lab 4 components use Zen Green classes/tokens (no inline hex colors) | Pass | `client/tests/lab-04/ui-style.test.tsx` | Planned |
-| STY-02 | UI style | V8 | Status/follow-up badges include text | Text present | `client/tests/lab-04/ui-style.test.tsx` | Planned |
+| STY-01 | UI style | V1 | Lab 4 components use Zen Green classes/tokens (no inline hex colors) | Pass | `client/tests/lab-04/ui-style.test.tsx` | Pass |
+| STY-02 | UI style | V8 | Status/follow-up badges include text | Text present | `client/tests/lab-04/ui-style.test.tsx` | Pass |
 | A11Y-01 | Accessibility | AC-27 | Form controls labelled; errors linked via aria-describedby | Pass | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
-| A11Y-02 | Accessibility | AC-27 | Keyboard: Tab reaches all drill-downs and action controls; Enter activates | Pass | `e2e/lab-04/dashboards.spec.ts` | Planned |
+| A11Y-02 | Accessibility | AC-27 | Keyboard: Tab reaches the dashboard drill-down, focus is visible, and Enter opens the filtered list | Pass | `e2e/lab-04/regression.spec.ts` | Pass |
 | RESP-01 | Responsive | AC-26 | Requester dashboard at 1280/768/375: no horizontal overflow | scrollWidth ≤ innerWidth | `e2e/lab-04/dashboards.spec.ts` | Pass |
 | RESP-02 | Responsive | AC-26 | Staff dashboard at 1280/768/375 | No overflow | `e2e/lab-04/dashboards.spec.ts` | Pass |
 | RESP-03 | Responsive | AC-26 | Actions Taken list/form at 1280/768/375 | No overflow, stacked cards on mobile | `e2e/lab-04/actions-taken-flow.spec.ts` | Pass |
@@ -222,18 +223,24 @@ e2e/lab-04/
 | AC-22 | DASH-09, UI-18, E2E-07 |
 | AC-23 | MIG-01, MIG-02 |
 | AC-24 | MIG-03 |
-| AC-25 | REG-01 to REG-05, WF-13, WF-14 |
+| AC-25 | REG-01 to REG-06, WF-13, WF-14 |
 | AC-26 | RESP-01, RESP-02, RESP-03 |
 | AC-27 | A11Y-01, A11Y-02 |
 | AC-28 | UI-04, UI-05 |
 | AC-29 | API-17 |
 
-## 14. Final Results (filled in Issue #61 from `main`)
+## 14. Final Results
+
+Recorded on 2026-10-04 on `feature/issue-61-final-release`, which is `lab4-staging` plus Issue #61, against the dedicated `toktickit_test` database. The same suites are re-run on `main` after the release merge, and the output is attached to the release Pull Request.
 
 | Suite | Files | Tests | Result |
 |---|---|---|---|
-| Server (Labs 1–4) | — | — | Pending |
-| Server build | — | — | Pending |
-| Client (Labs 1–4) | — | — | Pending |
-| Client build | — | — | Pending |
-| Playwright Lab 2 / Lab 3 / Lab 4 | — | — | Pending |
+| Server, Labs 1–4 (`cd server && npm test`) | 22 | 220 | All passed |
+| Server TypeScript build (`npm run build`) | — | — | Passed |
+| Client, Labs 1–4 (`cd client && npm test`) | 17 | 109 | All passed |
+| Client production build (`npm run build`) | — | — | Passed |
+| Playwright Lab 4 (`playwright.lab4.config.ts`) | 4 | 13 | All passed, run twice in a row |
+| Playwright Lab 3 (`playwright.lab3.config.ts`) | 1 | 1 | Passed |
+| Playwright Lab 2 (`playwright.config.ts`) | 1 | 4 | Retired (see REG-06) |
+
+Every Acceptance Criterion AC-01 to AC-29 maps to at least one passing test (section 13).

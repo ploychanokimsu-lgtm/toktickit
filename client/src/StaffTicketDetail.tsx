@@ -1,3 +1,4 @@
+import { formatDateTime } from "./format.js";
 import {
   type FormEvent,
   useCallback,
@@ -91,7 +92,7 @@ function formatLabel(value: string): string {
 }
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleString();
+  return formatDateTime(value);
 }
 
 async function requestJson<T>(

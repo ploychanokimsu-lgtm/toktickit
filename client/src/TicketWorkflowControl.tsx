@@ -1,3 +1,4 @@
+import { formatDateTime } from "./format.js";
 import {
   useCallback,
   useEffect,
@@ -305,7 +306,7 @@ export default function TicketWorkflowControl({
             <span aria-hidden="true">✓ </span>Requester says problem appears resolved
           </span>{" "}
           <span className="tk-help-text">
-            {new Date(workflow.requesterResolutionIndicatedAt).toLocaleString()}
+            {formatDateTime(workflow.requesterResolutionIndicatedAt)}
           </span>
         </p>
       )}

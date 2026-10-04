@@ -1,10 +1,11 @@
+import { formatDateTime } from "../format.js";
 import TicketStatusBadge, { formatStatusLabel } from "./TicketStatusBadge.js";
 import type { DashboardTicket } from "../dashboard-api.js";
 
 // Short Ticket list used by the Requester and staff dashboards.
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleString();
+  return formatDateTime(value);
 }
 
 export default function DashboardTicketList({

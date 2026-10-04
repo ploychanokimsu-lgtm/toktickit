@@ -2,56 +2,48 @@
 
 TokTickIT is a full-stack IT service desk application developed for CPE334.
 
-Lab 1 established the basic full-stack foundation.
-
-Lab 2 adds the Requester-facing Ticketing MVP with a temporary Development Requester identity used to simulate multi-user ownership before authentication is introduced in a later lab.
+| Lab | Increment |
+|---|---|
+| Lab 1 | Full-stack foundation, health check, Category list |
+| Lab 2 | Requester Ticketing MVP: Create Ticket, My Tickets, Ticket Detail, Attachments |
+| Lab 3 | Authentication and roles, IT Staff Ticket Queue and Ticket Detail, Public Comments, Internal Notes, Administrator User Management |
+| Lab 4 | Actions Taken, final Ticket workflow and resolution gate, Requester and IT Staff dashboards, final regression and hardening |
 
 ---
 
 # Technology
 
-- Frontend: React + TypeScript + Vite + Bootstrap
+- Frontend: React + TypeScript + Vite + Bootstrap, Zen Green design system
 - Backend: Node.js + Express + TypeScript
-- Database: PostgreSQL
-- ORM: Prisma
-- API / Component Testing: Vitest + Supertest + Testing Library
-- End-to-End Testing: Playwright
+- Database: PostgreSQL with Prisma
+- API / component tests: Vitest + Supertest + Testing Library
+- End-to-end tests: Playwright
 
 ---
 
-# Lab 2 Features
+# Features
 
-The Requester-facing Lab 2 increment supports:
+## Requester
 
-- Development Requester selection for testing
-- Active Requester filtering
-- Requester switching
-- Create Ticket
-- Backend-generated Ticket Number
-- Category and Related System reference data
-- Requested Priority
-- My Tickets
-- Requester ownership enforcement
-- Search
-- Filtering
-- Sorting
-- Pagination
-- Loading states
-- Empty and no-results states
-- Requester Ticket Detail
-- Attachment upload
-- JPG/JPEG, PNG, WEBP and PDF validation
-- Maximum 5 MB per Attachment
-- Maximum five active Attachments per Ticket
-- Attachment download
-- Soft removal with removal reason
-- Retained removed Attachment metadata
-- Blocked download after removal
-- Cross-Requester Ticket and Attachment protection
-- Zen Green responsive UI
-- Desktop, tablet and mobile verification
+- Sign in; the Dashboard is the landing page
+- Dashboard: My Open Tickets, Waiting for Me, Resolved and Closed, each linking to filtered My Tickets; Recently Updated and Recently Resolved lists
+- Create Ticket with a backend-generated Ticket Number
+- My Tickets with search, status/category/system/priority filters, sorting and pagination
+- Ticket Detail with Attachments (JPG/PNG/WEBP/PDF, 5 MB, five active), Public Comments, read-only Actions Taken, and "Problem Appears Resolved"
+- Access only to the Requester's own Tickets
 
-The Development Requester selector is only a Lab 2 testing mechanism. It is not authentication.
+## IT Staff
+
+- Dashboard: Unassigned, My Assigned, My Actions (7 days), Tickets by status and IT Priority, Urgent and Recently Updated lists, all linking to the filtered Ticket Queue
+- Ticket Queue with search, filters, sorting and pagination
+- Ticket Detail: claim/assign owner, IT Priority, Public Comments, Internal Notes
+- Actions Taken: Date/Time, Description, Result, Performed By (automatic), Assignee, Planned/Completed/Cancelled status, Follow-Up Required with Follow-up Note, Attachment Notes
+- Status changes limited to the permitted transitions; Resolved requires an owner, a completed action, no outstanding follow-up and no planned actions
+
+## Administrator
+
+- Everything IT Staff can do, plus active user counts on the Dashboard
+- User Management: search, role filter, create and edit users, activate/deactivate, set initial passwords
 
 ---
 
@@ -59,246 +51,136 @@ The Development Requester selector is only a Lab 2 testing mechanism. It is not 
 
     toktickit/
     ├── client/
-    │   ├── src/
-    │   └── tests/
-    │       ├── lab-01/
-    │       └── lab-02/
-    │
+    │   ├── src/                     # React application
+    │   └── tests/lab-01 … lab-04/   # Component and style tests
     ├── server/
     │   ├── prisma/
-    │   ├── src/
-    │   ├── tests/
-    │   │   ├── lab-01/
-    │   │   └── lab-02/
+    │   │   ├── schema.prisma
+    │   │   ├── migrations/
+    │   │   ├── rollback/            # Documented Lab 4 rollback script
+    │   │   ├── seed.ts
+    │   │   └── seed-lab4.ts
+    │   ├── src/                     # Express API
+    │   ├── tests/lab-01 … lab-04/   # API and integration tests
     │   └── uploads/                 # Runtime files; not committed
-    │
-    ├── docs/
-    │   ├── lab-01/
-    │   └── lab-02/
-    │       ├── specification.md
-    │       ├── tests.md
-    │       ├── ui-spec.md
-    │       ├── api-spec.md
-    │       ├── reviewer.md
-    │       └── ai-use.md
-    │
-    ├── e2e/
-    │   └── lab-02/
-    │       └── requester-ticket-flow.spec.ts
-    │
-    ├── artifacts/
-    │   └── lab-02/
-    │       └── screenshots/
-    │           ├── create-ticket/
-    │           ├── my-tickets/
-    │           └── ticket-detail/
-    │
-    ├── playwright.config.ts
-    ├── package.json
-    ├── .gitignore
-    └── README.md
+    ├── e2e/lab-02 … lab-04/         # Playwright specs
+    ├── artifacts/lab-0x/screenshots/
+    ├── docs/lab-01 … lab-04/        # Specifications, tests, reviews, AI use
+    ├── playwright.config.ts         # Lab 2 (retired, see docs/lab-04/tests.md)
+    ├── playwright.lab3.config.ts
+    └── playwright.lab4.config.ts
 
 ---
 
-# Requirements
+# Setup
 
-Install:
+## 1. Requirements
 
-- Node.js
-- npm
-- PostgreSQL
+- Node.js 20+ and npm
+- PostgreSQL 15+ (local install or Docker)
 
-For E2E testing, Playwright Chromium is also required.
+## 2. Database
 
----
+Create a database for development and a separate one for tests. The test database name must contain `test`. With Docker, for example:
 
-# Database Setup
+    docker run -d --name toktickit-postgres -p 5432:5432 \
+      -e POSTGRES_USER=toktickit -e POSTGRES_PASSWORD=<choose-a-password> \
+      -e POSTGRES_DB=toktickit_test postgres:17-alpine
 
-Create a PostgreSQL database for TokTickIT.
+## 3. Environment
 
-Copy:
+Copy `server/.env.example` to `server/.env` and fill in:
 
-    server/.env.example
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | Database the server uses |
+| `TEST_DATABASE_URL` | For tests, set to the same `*_test` database as `DATABASE_URL` |
+| `LAB3_INITIAL_PASSWORD` | Initial password given to every seeded account |
+| `LAB4_E2E_PASSWORD` | Password the E2E accounts are moved to on their first run |
+| `PORT` | API port (default 3000) |
 
-to:
+Copy `client/.env.example` to `client/.env` if the API is not at `http://localhost:3000`.
 
-    server/.env
+Never commit `.env` files.
 
-and configure the local `DATABASE_URL`.
-
-The real `.env` file must never be committed.
-
-From the server directory:
+## 4. Install, migrate and seed
 
     cd server
     npm install
-    npx prisma generate
-    npx prisma migrate dev
+    npx prisma migrate deploy
     npm run prisma:seed
 
-The seed is designed to be safe to run repeatedly.
-
-Lab 2 seed data includes:
-
-- Account and Access
-- Hardware
-- Software
-- Network
-- multiple Related Systems
-- at least four active Development Requesters
-- at least one inactive Development Requester
-
----
-
-# Install Dependencies
-
-Backend:
-
-    cd server
+    cd ../client
     npm install
 
-Frontend:
-
-    cd client
-    npm install
-
-Root / Playwright:
-
+    cd ..
     npm install
     npx playwright install chromium
+
+The project does not load `.env` automatically for Node scripts. In Bash, export it first:
+
+    set -a; . server/.env; set +a
+
+Migrations are additive. The Lab 4 migration only creates the `ActionTaken` table; its rollback script is `server/prisma/rollback/lab4_actions_taken.down.sql` (disposable databases only).
+
+The seed is idempotent and creates:
+
+- Categories and Related Systems
+- Requesters: Jennifer Anderson, Michael Brown, Narin Chaiyasit, Ploy Srisuk (no Tickets), and inactive Alex Turner
+- IT Staff: Daniel Wilson, Sarah Johnson, Kevin Patel, Mali Kaewdee (no assigned Tickets), and inactive David Lee
+- Administrator: Alex Thompson (`admin@example.com`)
+- 12 Lab 4 demo Tickets in every status and priority, with zero, one and several Actions Taken
+
+Seeded emails use `firstname.lastname@example.com`. Every account starts with `LAB3_INITIAL_PASSWORD` and must change it on first sign-in.
 
 ---
 
 # Run the Application
 
-Backend:
-
-    cd server
-    npm run dev
-
-Backend runs at:
-
-    http://localhost:3000
-
-Frontend in another terminal:
-
-    cd client
-    npm run dev
-
-Frontend runs at:
-
-    http://localhost:5173
+    cd server && npm run dev      # http://localhost:3000
+    cd client && npm run dev      # http://localhost:5173
 
 ---
 
-# Run Server Tests
+# Tests
 
-From:
+With `server/.env` exported (see above):
 
-    server/
+| Suite | Command |
+|---|---|
+| Server API and integration | `cd server && npm test` |
+| Server build | `cd server && npm run build` |
+| Client component and style | `cd client && npm test` |
+| Client build (also type-checks tests) | `cd client && npm run build` |
+| Lab 4 E2E | `npx playwright test --config=playwright.lab4.config.ts` |
+| Lab 3 E2E | `LAB3_E2E_PASSWORD="$LAB4_E2E_PASSWORD" npx playwright test --config=playwright.lab3.config.ts` |
 
-run:
+Playwright starts both servers automatically. The Lab 4 E2E creates its own Tickets, so it can be run repeatedly. Screenshots are written to `artifacts/lab-04/screenshots/`.
 
-    npm test
+The Lab 2 Playwright suite (`playwright.config.ts`) depends on the Development Requester selector removed in Lab 3. Its flows are covered by `e2e/lab-04/regression.spec.ts`.
 
-Build verification:
-
-    npm run build
-
-Lab 2 server tests cover:
-
-- Development Requester API
-- Create Ticket
-- My Tickets
-- Ticket Detail
-- Attachment lifecycle
-- ownership behavior
-- validation and safe failures
+The final test results and acceptance-criteria traceability are in `docs/lab-04/tests.md`.
 
 ---
 
-# Run Client Tests
+# Git Workflow
 
-From:
+    feature/issue-N-…  →  lab4-staging  →  main
 
-    client/
-
-run:
-
-    npm test
-
-Build verification:
-
-    npm run build
-
-Lab 2 client tests cover:
-
-- Development Requester Selection
-- Create Ticket
-- My Tickets
-- Requester Ticket Detail
-- Attachment Section
-- Zen Green UI states and styles
+Each Issue is developed on its own branch, enters `lab4-staging` through a reviewed Pull Request, and `lab4-staging` is merged into `main` through a final release Pull Request. The review record is in `docs/lab-04/reviewer.md`.
 
 ---
 
-# Run End-to-End Tests
+# Documentation
 
-From the repository root:
+| Document | Content |
+|---|---|
+| `docs/lab-04/specification.md` | Requirements, business rules, transition matrix, dashboard calculations, data changes, acceptance criteria, Definition of Done |
+| `docs/lab-04/api-spec.md` | REST API contract |
+| `docs/lab-04/ui-spec.md` | Screens, states, responsive and accessibility rules, completed visual checklist |
+| `docs/lab-04/tests.md` | Test plan, traceability and final results |
+| `docs/lab-04/reviewer.md` | Peer review record |
+| `docs/lab-04/ai-use.md` | AI use and reflection |
+| `docs/lab-04/release-evidence.md` | Release verification summary |
 
-    npx playwright test
-
-The Lab 2 Playwright suite verifies:
-
-- Development Requester selection
-- Ticket creation
-- My Tickets
-- Ticket Detail
-- Attachment upload
-- Attachment download
-- soft removal
-- blocked removed-file download
-- Requester ownership isolation
-- desktop responsive behavior
-- tablet responsive behavior
-- mobile responsive behavior
-- horizontal overflow protection
-
-Playwright screenshots are stored under:
-
-    artifacts/lab-02/screenshots/
-
----
-
-# Lab 2 Git Workflow
-
-Lab 2 uses:
-
-    feature branch
-          ↓
-    lab2-staging
-          ↓
-    main
-
-Each Issue is developed on its own feature branch and enters `lab2-staging` through a Pull Request and peer review.
-
-After all Lab 2 work passes integration testing, one final release Pull Request merges:
-
-    lab2-staging → main
-
----
-
-# Important
-
-Do not commit:
-
-- `.env`
-- `node_modules`
-- runtime Attachment files in `server/uploads/`
-- Playwright temporary reports/results
-
-Required Lab 2 documentation is located under:
-
-    docs/lab-02/
-
-The final `main` branch is the source of truth for Lab 2 submission.
+Do not commit `.env` files, `node_modules`, `server/uploads/`, or Playwright reports and results.

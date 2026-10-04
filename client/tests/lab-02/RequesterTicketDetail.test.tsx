@@ -376,9 +376,10 @@ describe(
           ).length
         ).toBeGreaterThan(0);
 
+        // Lab 4: priorities are shown in title case like other badges.
         expect(
           screen.getAllByText(
-            "HIGH"
+            "High"
           ).length
         ).toBeGreaterThan(0);
       }

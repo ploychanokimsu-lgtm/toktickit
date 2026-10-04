@@ -1,3 +1,4 @@
+import { formatDateTime } from "./format.js";
 import {
   type FormEvent,
   useEffect,
@@ -40,7 +41,7 @@ const EMPTY_PAGINATION: StaffQueuePagination = {
 };
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleString();
+  return formatDateTime(value);
 }
 
 function formatLabel(value: string): string {
