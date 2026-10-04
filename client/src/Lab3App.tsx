@@ -458,6 +458,7 @@ function StaffWorkspace({
         <StaffTicketDetail
           ticketId={selectedTicketId}
           currentUserId={user.id}
+          currentUserName={user.name}
           onBack={() =>
             setSelectedTicketId(null)
           }

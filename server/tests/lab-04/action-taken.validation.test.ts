@@ -71,6 +71,14 @@ describe("Lab 4 Action Taken validation rules", () => {
     expect(
       validate(validInput({ actionAt: "not a date" })).errors.actionAt
     ).toBeDefined();
+    // Same minute as Ticket creation (minute-precision date/time inputs).
+    expect(
+      validateActionTaken(
+        validInput({ actionAt: "2026-10-01T00:00:00.000Z" }),
+        { ticketCreatedAt: new Date("2026-10-01T00:00:42.000Z"), now },
+        {}
+      )
+    ).not.toBeNull();
     // Within the 5-minute clock-skew allowance.
     expect(
       validate(validInput({ actionAt: "2026-10-05T03:04:00.000Z" })).values

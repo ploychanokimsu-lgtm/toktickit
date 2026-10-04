@@ -1,3 +1,4 @@
+import ActionsTaken from "./ActionsTaken.js";
 import RequesterCompletionPanel from "./RequesterCompletionPanel.js";
 import {
   type ChangeEvent,
@@ -823,6 +824,12 @@ export default function RequesterTicketDetail({
                 </div>
               </div>
             </section>
+
+            <ActionsTaken
+              ticketId={ticket.id}
+              mode="requester"
+              ticketStatus={ticket.currentStatus}
+            />
 
             <RequesterCompletionPanel
               ticketId={ticket.id}
