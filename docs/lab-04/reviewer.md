@@ -35,7 +35,7 @@ No PR was merged without an approval, and nothing was pushed directly to `main` 
 | [#65](https://github.com/ploychanokimsu-lgtm/toktickit/pull/65) | #58 | Ticket Workflow and Resolution Gate | Powwong | Approved, merged 2026-10-04 |
 | [#66](https://github.com/ploychanokimsu-lgtm/toktickit/pull/66) | #59 | Requester Dashboard | Powwong | Approved, merged 2026-10-04 |
 | [#67](https://github.com/ploychanokimsu-lgtm/toktickit/pull/67) | #60 | IT Staff and Administrator Dashboard | Powwong | Approved, merged 2026-10-04 |
-| Issue #61 PR | #61 | Final Hardening, Regression and Release Evidence | Powwong | This record is part of that PR |
+| [#68](https://github.com/ploychanokimsu-lgtm/toktickit/pull/68) | #61 | Final Hardening, Regression and Release Evidence | Powwong | In review (adds this record) |
 | `lab4-staging` → `main` | All | Lab 4 release | Powwong | Final release PR |
 
 ---

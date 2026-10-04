@@ -18,7 +18,7 @@ Issue #61 completes the final hardening, regression, and release preparation for
 | #58 | Ticket Workflow and Resolution Gate | #65 | Merged |
 | #59 | Requester Dashboard | #66 | Merged |
 | #60 | IT Staff and Administrator Dashboard | #67 | Merged |
-| #61 | Final Hardening, Regression and Release Evidence | This issue | In review |
+| #61 | Final Hardening, Regression and Release Evidence | #68 | In review |
 
 ## Automated Verification
 
