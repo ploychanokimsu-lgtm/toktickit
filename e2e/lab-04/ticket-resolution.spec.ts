@@ -26,6 +26,11 @@ test.beforeAll(async () => {
 });
 
 async function openStaffTicket(page: Page, ticketNumber: string) {
+  // Lab 4: staff land on the Dashboard; open the queue from the navigation.
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("button", { name: "Staff Ticket Queue" })
+    .click();
   await expect(page.getByRole("heading", { name: "IT Staff Ticket Queue" })).toBeVisible();
 
   const search = page.getByLabel("Search");

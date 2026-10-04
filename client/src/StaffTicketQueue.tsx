@@ -15,8 +15,19 @@ import {
   type TicketStatus,
 } from "./api.js";
 
+// Lab 4: filters pre-applied from a dashboard drill-down.
+export interface StaffQueueInitialFilters {
+  status?: string;
+  itPriority?: RequestedPriority | "";
+  assignment?: "all" | "assigned" | "unassigned" | "mine";
+}
+
+const ACTIVE_STATUS_FILTER =
+  "NEW,OPEN,IN_PROGRESS,WAITING_FOR_REQUESTER,REOPENED";
+
 interface StaffTicketQueueProps {
   onOpenTicket: (ticketId: number) => void;
+  initialFilters?: StaffQueueInitialFilters;
 }
 
 const EMPTY_PAGINATION: StaffQueuePagination = {
@@ -74,6 +85,7 @@ function statusBadge(status: TicketStatus): string {
 
 export default function StaffTicketQueue({
   onOpenTicket,
+  initialFilters = {},
 }: StaffTicketQueueProps) {
   const [tickets, setTickets] = useState<
     StaffQueueTicket[]
@@ -99,13 +111,17 @@ export default function StaffTicketQueue({
     setRequestedPriority,
   ] = useState<RequestedPriority | "">("");
   const [itPriority, setItPriority] =
-    useState<RequestedPriority | "">("");
+    useState<RequestedPriority | "">(
+      initialFilters.itPriority ?? ""
+    );
   const [status, setStatus] =
-    useState<TicketStatus | "">("");
+    useState<TicketStatus | string>(
+      initialFilters.status ?? ""
+    );
   const [assignment, setAssignment] =
     useState<
       "all" | "assigned" | "unassigned" | "mine"
-    >("all");
+    >(initialFilters.assignment ?? "all");
 
   const [sort, setSort] =
     useState<
@@ -416,6 +432,9 @@ export default function StaffTicketQueue({
                 }}
               >
                 <option value="">All Statuses</option>
+                <option value={ACTIVE_STATUS_FILTER}>
+                  Open (all active)
+                </option>
                 <option value="NEW">New</option>
                 <option value="OPEN">Open</option>
                 <option value="IN_PROGRESS">

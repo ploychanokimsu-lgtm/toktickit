@@ -89,6 +89,13 @@ async function signIn(
     );
   }
 
+  // Lab 4: IT Staff land on the Dashboard first.
+  await page
+    .getByRole("button", {
+      name: "Staff Ticket Queue",
+    })
+    .click();
+
   await expect(
     page.getByRole("heading", {
       name: "IT Staff Ticket Queue",

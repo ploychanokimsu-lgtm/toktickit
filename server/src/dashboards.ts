@@ -164,3 +164,158 @@ dashboardRouter.get(
     }
   }
 );
+
+const PRIORITIES = ["LOW", "MEDIUM", "HIGH"] as const;
+const ALL_STATUSES = Object.values(TicketStatus);
+const ACTIVE_FILTER = ACTIVE_STATUSES.join(",");
+
+/**
+ * GET /api/dashboard/staff
+ *
+ * IT Staff and Administrators (BR-28). Administrators also receive
+ * active user counts by role (BR-29).
+ */
+dashboardRouter.get(
+  "/staff",
+  requireRole(UserRole.IT_STAFF, UserRole.ADMINISTRATOR),
+  async (req, res) => {
+    const user = req.authUser!;
+    const now = new Date();
+    const active = { currentStatus: { in: [...ACTIVE_STATUSES] } };
+
+    try {
+      const [
+        unassigned,
+        myAssigned,
+        myActionsLast7Days,
+        statusGroups,
+        priorityGroups,
+        urgent,
+        recentlyUpdated,
+      ] = await prisma.$transaction([
+        prisma.ticket.count({ where: { ...active, ownerId: null } }),
+        prisma.ticket.count({ where: { ...active, ownerId: user.id } }),
+        prisma.actionTaken.count({
+          where: { performedById: user.id, actionAt: { gte: recentSince(now), lte: now } },
+        }),
+        prisma.ticket.groupBy({
+          by: ["currentStatus"],
+          orderBy: { currentStatus: "asc" },
+          _count: { _all: true },
+        }),
+        prisma.ticket.groupBy({
+          by: ["itPriority"],
+          where: active,
+          orderBy: { itPriority: "asc" },
+          _count: { _all: true },
+        }),
+        prisma.ticket.findMany({
+          where: { ...active, itPriority: "HIGH" },
+          orderBy: [{ updatedAt: "asc" }, { id: "asc" }],
+          take: LIST_LIMIT,
+          select: {
+            ...ticketSummarySelect,
+            itPriority: true,
+            owner: { select: { id: true, name: true } },
+          },
+        }),
+        prisma.ticket.findMany({
+          orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+          take: LIST_LIMIT,
+          select: {
+            ...ticketSummarySelect,
+            itPriority: true,
+            owner: { select: { id: true, name: true } },
+          },
+        }),
+      ]);
+
+      const statusCounts = statusGroups as unknown as {
+        currentStatus: TicketStatus;
+        _count: { _all: number };
+      }[];
+      const priorityCounts = priorityGroups as unknown as {
+        itPriority: string;
+        _count: { _all: number };
+      }[];
+
+      let usersByRole: Record<UserRole, number> | null = null;
+
+      if (user.role === UserRole.ADMINISTRATOR) {
+        const roleGroups = await prisma.user.groupBy({
+          by: ["role"],
+          where: { isActive: true },
+          orderBy: { role: "asc" },
+          _count: { _all: true },
+        });
+
+        usersByRole = { REQUESTER: 0, IT_STAFF: 0, ADMINISTRATOR: 0 };
+
+        for (const group of roleGroups as unknown as {
+          role: UserRole;
+          _count: { _all: number };
+        }[]) {
+          usersByRole[group.role] = group._count._all;
+        }
+      }
+
+      return res.status(200).json({
+        generatedAt: now.toISOString(),
+        timeZone: DASHBOARD_TIME_ZONE,
+        metrics: [
+          {
+            key: "unassigned",
+            label: "Unassigned",
+            count: unassigned,
+            drillDown: {
+              screen: "staff-queue",
+              query: { assignment: "unassigned", status: ACTIVE_FILTER },
+            },
+          },
+          {
+            key: "myAssigned",
+            label: "My Assigned",
+            count: myAssigned,
+            drillDown: {
+              screen: "staff-queue",
+              query: { assignment: "mine", status: ACTIVE_FILTER },
+            },
+          },
+          {
+            key: "myActionsLast7Days",
+            label: "My Actions (7 days)",
+            count: myActionsLast7Days,
+            drillDown: null,
+          },
+        ],
+        byStatus: ALL_STATUSES.map((status) => ({
+          status,
+          count:
+            statusCounts.find((group) => group.currentStatus === status)?._count._all ?? 0,
+          drillDown: { screen: "staff-queue", query: { status } },
+        })),
+        byItPriority: PRIORITIES.map((itPriority) => ({
+          itPriority,
+          count:
+            priorityCounts.find((group) => group.itPriority === itPriority)?._count._all ?? 0,
+          drillDown: {
+            screen: "staff-queue",
+            query: { itPriority, status: ACTIVE_FILTER },
+          },
+        })),
+        urgent,
+        recentlyUpdated,
+        usersByRole,
+      });
+    } catch (error) {
+      console.error("Failed to load the staff dashboard:", error);
+
+      return errorResponse(
+        res,
+        500,
+        "INTERNAL_ERROR",
+        "The dashboard could not be loaded."
+      );
+    }
+  }
+);

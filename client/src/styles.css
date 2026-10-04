@@ -1120,3 +1120,78 @@ textarea {
   justify-self: start;
   text-align: left;
 }
+
+/* ------------------------------------------------------------
+   Lab 4 - Staff dashboard
+------------------------------------------------------------ */
+
+.tk-metric-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tk-breakdown {
+  margin-bottom: 16px;
+}
+
+.tk-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 1px solid var(--tk-border);
+  border-radius: 999px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.tk-chip strong {
+  font-size: 1rem;
+}
+
+.tk-chip:hover {
+  border-color: var(--tk-primary);
+}
+
+.tk-chip:focus-visible {
+  outline: 3px solid var(--tk-secondary);
+  outline-offset: 2px;
+}
+
+.tk-user-counts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.tk-user-counts dt {
+  color: var(--tk-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.tk-user-counts dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+@media (max-width: 767px) {
+  .tk-metric-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .tk-chip {
+    min-height: 44px;
+  }
+}

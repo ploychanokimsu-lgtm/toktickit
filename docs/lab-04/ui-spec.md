@@ -18,8 +18,8 @@ Issue: #55. This document extends `docs/lab-03/ui-specs.md` and `docs/lab-02/ui-
 | Role | Navigation (in order) | Landing screen |
 |---|---|---|
 | Requester | Dashboard · My Tickets · Create Ticket | Dashboard |
-| IT Staff | Dashboard · Ticket Queue | Dashboard |
-| Administrator | Dashboard · Ticket Queue · User Management | Dashboard |
+| IT Staff | Dashboard · Staff Ticket Queue | Dashboard |
+| Administrator | Dashboard · Staff Ticket Queue · User Management | Dashboard |
 
 - The navigation is a light bar directly under the green header, with green link text. (In Labs 2–3 the links kept the white header colour after being moved below the header, which made them unreadable.)
 - The active link has a pale-green background plus a 3px underline, so it is not distinguished by color alone. It also carries `aria-current="page"`.
@@ -92,6 +92,8 @@ Issue: #55. This document extends `docs/lab-03/ui-specs.md` and `docs/lab-02/ui-
 - By-status and by-priority entries are rendered as a list of chips (`<ul>` of links). Each chip has text and a count and uses the existing status and priority badge colors plus text.
 - The Urgent list shows the owner name, or an "Unassigned" badge.
 - Refresh re-fetches the data. While loading, cards keep their previous values and show a busy indicator, which avoids layout jumps.
+- "Unassigned" with count > 0 shows the text cue "Needs an owner".
+- Every dashboard Ticket list row shows the status badge, IT Priority, owner (or "Unassigned") and "Updated <time>".
 - My Actions (7 days) is a count without a drill-down, so its card has no link.
 
 ### 4.2 Drill-down

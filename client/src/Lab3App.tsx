@@ -1,3 +1,4 @@
+import StaffDashboard from "./StaffDashboard.js";
 import StaffTicketDetail from "./StaffTicketDetail.js";
 import UserManagement from "./UserManagement.js";
 import {
@@ -8,7 +9,9 @@ import {
 } from "react";
 
 import App from "./App.js";
-import StaffTicketQueue from "./StaffTicketQueue.js";
+import StaffTicketQueue, {
+  type StaffQueueInitialFilters,
+} from "./StaffTicketQueue.js";
 
 import {
   changeInitialPassword,
@@ -368,15 +371,29 @@ function PasswordChangeScreen({
   );
 }
 
-function StaffWorkspace({
+type OperationsScreen =
+  | "dashboard"
+  | "queue"
+  | "users";
+
+// Lab 4: IT Staff and Administrators share one workspace. Administrators
+// also get User Management and, per decision D-03, the Ticket Queue.
+function OperationsWorkspace({
   user,
   onLogout,
 }: {
   user: SessionUser;
   onLogout: () => Promise<void>;
 }) {
+  const isAdministrator =
+    user.role === "ADMINISTRATOR";
+  const [screen, setScreen] =
+    useState<OperationsScreen>("dashboard");
   const [selectedTicketId, setSelectedTicketId] =
     useState<number | null>(null);
+  const [queueFilters, setQueueFilters] =
+    useState<StaffQueueInitialFilters>({});
+  const [queueKey, setQueueKey] = useState(0);
   const [logoutError, setLogoutError] =
     useState("");
 
@@ -394,6 +411,32 @@ function StaffWorkspace({
     }
   }
 
+  function navigate(
+    next: OperationsScreen,
+    filters: StaffQueueInitialFilters = {}
+  ) {
+    setSelectedTicketId(null);
+    setQueueFilters(filters);
+    // Remount the queue so new filters are applied.
+    setQueueKey((current) => current + 1);
+    setScreen(next);
+  }
+
+  function openTicket(ticketId: number) {
+    setScreen("queue");
+    setSelectedTicketId(ticketId);
+  }
+
+  const navItems: Array<[OperationsScreen, string]> = [
+    ["dashboard", "Dashboard"],
+    ["queue", "Staff Ticket Queue"],
+    ...(isAdministrator
+      ? ([["users", "User Management"]] as Array<
+          [OperationsScreen, string]
+        >)
+      : []),
+  ];
+
   return (
     <div className="tk-app">
       <header className="tk-header">
@@ -404,7 +447,7 @@ function StaffWorkspace({
             <span className="tk-requester-display">
               {user.name} ·{" "}
               <strong>
-                {user.role === "ADMINISTRATOR"
+                {isAdministrator
                   ? "Administrator"
                   : "IT Staff"}
               </strong>
@@ -425,16 +468,23 @@ function StaffWorkspace({
         className="tk-nav"
         aria-label="Main navigation"
       >
-        <button
-          type="button"
-          className="tk-nav-link active"
-          aria-current="page"
-          onClick={() =>
-            setSelectedTicketId(null)
-          }
-        >
-          Staff Ticket Queue
-        </button>
+        {navItems.map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            className={`tk-nav-link${
+              screen === value ? " active" : ""
+            }`}
+            aria-current={
+              screen === value
+                ? "page"
+                : undefined
+            }
+            onClick={() => navigate(value)}
+          >
+            {label}
+          </button>
+        ))}
       </nav>
 
       {logoutError && (
@@ -448,108 +498,56 @@ function StaffWorkspace({
         </main>
       )}
 
-      {selectedTicketId === null ? (
-        <StaffTicketQueue
-          onOpenTicket={(ticketId) =>
-            setSelectedTicketId(ticketId)
+      {screen === "dashboard" && (
+        <StaffDashboard
+          userName={user.name}
+          isAdministrator={isAdministrator}
+          onDrillDown={(query) =>
+            navigate("queue", {
+              status: query.status,
+              itPriority:
+                query.itPriority as StaffQueueInitialFilters["itPriority"],
+              assignment:
+                query.assignment as StaffQueueInitialFilters["assignment"],
+            })
+          }
+          onOpenTicket={openTicket}
+          onOpenQueue={() => navigate("queue")}
+          onOpenUsers={
+            isAdministrator
+              ? () => navigate("users")
+              : undefined
           }
         />
-      ) : (
-        <StaffTicketDetail
-          ticketId={selectedTicketId}
-          currentUserId={user.id}
-          currentUserName={user.name}
-          onBack={() =>
-            setSelectedTicketId(null)
-          }
-        />
+      )}
+
+      {screen === "queue" &&
+        (selectedTicketId === null ? (
+          <StaffTicketQueue
+            key={queueKey}
+            initialFilters={queueFilters}
+            onOpenTicket={(ticketId) =>
+              setSelectedTicketId(ticketId)
+            }
+          />
+        ) : (
+          <StaffTicketDetail
+            ticketId={selectedTicketId}
+            currentUserId={user.id}
+            currentUserName={user.name}
+            onBack={() =>
+              setSelectedTicketId(null)
+            }
+          />
+        ))}
+
+      {screen === "users" && isAdministrator && (
+        <UserManagement currentUserId={user.id} />
       )}
     </div>
   );
 }
 
-function AdministratorWorkspace({
-  user,
-  onLogout,
-}: {
-  user: SessionUser;
-  onLogout: () => Promise<void>;
-}) {
-  const [logoutError, setLogoutError] =
-    useState("");
-
-  async function handleLogout() {
-    setLogoutError("");
-
-    try {
-      await onLogout();
-    } catch (error) {
-      setLogoutError(
-        error instanceof Error
-          ? error.message
-          : "Unable to sign out."
-      );
-    }
-  }
-
-  return (
-    <div className="tk-app">
-      <header className="tk-header">
-        <div className="tk-header-inner">
-          <span className="tk-brand">
-            TokTickIT
-          </span>
-
-          <div className="tk-header-actions">
-            <span className="tk-requester-display">
-              {user.name} ·{" "}
-              <strong>
-                Administrator
-              </strong>
-            </span>
-
-            <button
-              type="button"
-              className="tk-button tk-button-secondary tk-button-sm"
-              onClick={() =>
-                void handleLogout()
-              }
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <nav
-        className="tk-nav"
-        aria-label="Main navigation"
-      >
-        <span
-          className="tk-nav-link active"
-          aria-current="page"
-        >
-          User Management
-        </span>
-      </nav>
-
-      {logoutError && (
-        <main className="tk-page">
-          <div
-            className="tk-alert tk-alert-error"
-            role="alert"
-          >
-            {logoutError}
-          </div>
-        </main>
-      )}
-
-      <UserManagement
-        currentUserId={user.id}
-      />
-    </div>
-  );
-}
 export default function Lab3App() {
   const [checkingSession, setCheckingSession] =
     useState(true);
@@ -647,7 +645,7 @@ export default function Lab3App() {
 
   if (user.role === "ADMINISTRATOR") {
     return (
-      <AdministratorWorkspace
+      <OperationsWorkspace
         user={user}
         onLogout={async () => {
           await signOut();
@@ -662,7 +660,7 @@ export default function Lab3App() {
 
   if (user.role === "IT_STAFF") {
     return (
-      <StaffWorkspace
+      <OperationsWorkspace
         user={user}
         onLogout={async () => {
           await signOut();
