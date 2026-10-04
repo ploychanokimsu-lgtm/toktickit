@@ -19,6 +19,12 @@ import {
 
 import { getPrisma } from "./prisma.js";
 
+import {
+  STATUS_TRANSITIONS,
+  loadResolutionGateInput,
+  resolutionGateUnmet,
+} from "./ticket-workflow.js";
+
 const prisma = getPrisma();
 
 export const staffTicketOperationsRouter =
@@ -317,46 +323,6 @@ staffTicketOperationsRouter.get(
 
 
 
-const STATUS_TRANSITIONS:
-  Record<TicketStatus, readonly TicketStatus[]> = {
-    NEW: [
-      TicketStatus.OPEN,
-      TicketStatus.IN_PROGRESS,
-      TicketStatus.CANCELLED,
-    ],
-    OPEN: [
-      TicketStatus.IN_PROGRESS,
-      TicketStatus.WAITING_FOR_REQUESTER,
-      TicketStatus.RESOLVED,
-      TicketStatus.CANCELLED,
-    ],
-    IN_PROGRESS: [
-      TicketStatus.WAITING_FOR_REQUESTER,
-      TicketStatus.RESOLVED,
-      TicketStatus.CANCELLED,
-    ],
-    WAITING_FOR_REQUESTER: [
-      TicketStatus.IN_PROGRESS,
-      TicketStatus.RESOLVED,
-      TicketStatus.CANCELLED,
-    ],
-    RESOLVED: [
-      TicketStatus.REOPENED,
-      TicketStatus.CLOSED,
-    ],
-    CLOSED: [
-      TicketStatus.REOPENED,
-    ],
-    REOPENED: [
-      TicketStatus.IN_PROGRESS,
-      TicketStatus.WAITING_FOR_REQUESTER,
-      TicketStatus.RESOLVED,
-      TicketStatus.CANCELLED,
-    ],
-    CANCELLED: [
-      TicketStatus.REOPENED,
-    ],
-  };
 
 function readSingleFieldBody(
   value: unknown,
@@ -739,7 +705,142 @@ staffTicketOperationsRouter.patch(
 );
 
 /**
+ * GET /api/staff/tickets/:ticketId/workflow
+ *
+ * Lab 4: permitted next statuses and the resolution gate (FR-12).
+ */
+staffTicketOperationsRouter.get(
+  "/:ticketId/workflow",
+  async (req, res) => {
+    const ticketId = readTicketId(
+      req.params.ticketId
+    );
+
+    if (ticketId === null) {
+      return errorResponse(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        "Ticket ID must be a positive integer."
+      );
+    }
+
+    try {
+      const ticket =
+        await prisma.ticket.findUnique({
+          where: { id: ticketId },
+          select: {
+            ownerId: true,
+            currentStatus: true,
+            requesterResolutionIndicatedAt: true,
+          },
+        });
+
+      if (!ticket) {
+        return errorResponse(
+          res,
+          404,
+          "TICKET_NOT_FOUND",
+          "The requested Ticket was not found."
+        );
+      }
+
+      const unmet = resolutionGateUnmet(
+        await loadResolutionGateInput(
+          prisma,
+          ticketId,
+          ticket.ownerId
+        )
+      );
+
+      return res.status(200).json({
+        currentStatus: ticket.currentStatus,
+        allowedNextStatuses:
+          STATUS_TRANSITIONS[ticket.currentStatus],
+        resolutionGate: {
+          satisfied: unmet.length === 0,
+          unmet,
+        },
+        requesterResolutionIndicatedAt:
+          ticket.requesterResolutionIndicatedAt,
+      });
+    } catch (error) {
+      console.error(
+        "Failed to load Ticket workflow:",
+        error
+      );
+
+      return errorResponse(
+        res,
+        500,
+        "INTERNAL_ERROR",
+        "The Ticket workflow could not be loaded."
+      );
+    }
+  }
+);
+
+function readStatusBody(
+  value: unknown
+): {
+  status: TicketStatus;
+  expectedStatus: TicketStatus;
+} | null {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    Array.isArray(value)
+  ) {
+    return null;
+  }
+
+  const body = value as Record<string, unknown>;
+  const keys = Object.keys(body).sort();
+
+  if (
+    keys.length !== 2 ||
+    keys[0] !== "expectedStatus" ||
+    keys[1] !== "status"
+  ) {
+    return null;
+  }
+
+  const statuses = Object.values(
+    TicketStatus
+  ) as string[];
+
+  if (
+    typeof body.status !== "string" ||
+    typeof body.expectedStatus !== "string" ||
+    !statuses.includes(body.status) ||
+    !statuses.includes(body.expectedStatus)
+  ) {
+    return null;
+  }
+
+  return {
+    status: body.status as TicketStatus,
+    expectedStatus:
+      body.expectedStatus as TicketStatus,
+  };
+}
+
+class StatusChangeError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: string,
+    message: string,
+    readonly details?: Record<string, string>
+  ) {
+    super(message);
+  }
+}
+
+/**
  * PATCH /api/staff/tickets/:ticketId/status
+ *
+ * Lab 4: requires the status the client last saw (BR-21) and enforces
+ * the resolution gate for RESOLVED (BR-20), in one transaction.
  */
 staffTicketOperationsRouter.patch(
   "/:ticketId/status",
@@ -757,99 +858,137 @@ staffTicketOperationsRouter.patch(
       );
     }
 
-    const body = readSingleFieldBody(
-      req.body,
-      "status"
-    );
+    const body = readStatusBody(req.body);
 
-    if (
-      !body ||
-      typeof body.status !== "string" ||
-      !Object.values(TicketStatus).includes(
-        body.status as TicketStatus
-      )
-    ) {
+    if (!body) {
       return errorResponse(
         res,
         400,
         "VALIDATION_ERROR",
-        "Ticket Status is invalid."
+        "Ticket Status and the expected current status are required.",
+        {
+          status:
+            "Send status and expectedStatus.",
+        }
       );
     }
 
-    const nextStatus =
-      body.status as TicketStatus;
+    const nextStatus = body.status;
 
     try {
-      const ticket =
-        await findOperationTicket(ticketId);
-
-      if (!ticket) {
-        return errorResponse(
-          res,
-          404,
-          "TICKET_NOT_FOUND",
-          "The requested Ticket was not found."
-        );
-      }
-
-      const allowed =
-        STATUS_TRANSITIONS[
-          ticket.currentStatus
-        ];
-
-      if (!allowed.includes(nextStatus)) {
-        return errorResponse(
-          res,
-          409,
-          "INVALID_STATUS_TRANSITION",
-          `Ticket Status cannot change from ${ticket.currentStatus} to ${nextStatus}.`,
-          {
-            status:
-              allowed.length > 0
-                ? `Allowed next statuses: ${allowed.join(", ")}.`
-                : "No further status transitions are allowed.",
-          }
-        );
-      }
-
-      const result =
-        await prisma.ticket.updateMany({
-          where: {
-            id: ticketId,
-            currentStatus:
-              ticket.currentStatus,
-          },
-          data: {
-            currentStatus: nextStatus,
-          },
-        });
-
-      if (result.count !== 1) {
-        return errorResponse(
-          res,
-          409,
-          "TICKET_CHANGED",
-          "The Ticket was changed by another user. Reload and try again."
-        );
-      }
-
       const updated =
-        await prisma.ticket.findUnique({
-          where: {
-            id: ticketId,
-          },
-          select: {
-            id: true,
-            currentStatus: true,
-            updatedAt: true,
-          },
+        await prisma.$transaction(async (tx) => {
+          const ticket =
+            await tx.ticket.findUnique({
+              where: { id: ticketId },
+              select: {
+                id: true,
+                ownerId: true,
+                currentStatus: true,
+              },
+            });
+
+          if (!ticket) {
+            throw new StatusChangeError(
+              404,
+              "TICKET_NOT_FOUND",
+              "The requested Ticket was not found."
+            );
+          }
+
+          if (
+            ticket.currentStatus !==
+            body.expectedStatus
+          ) {
+            throw new StatusChangeError(
+              409,
+              "TICKET_CHANGED",
+              "The Ticket was changed by another user. Reload and try again."
+            );
+          }
+
+          const allowed =
+            STATUS_TRANSITIONS[
+              ticket.currentStatus
+            ];
+
+          if (!allowed.includes(nextStatus)) {
+            throw new StatusChangeError(
+              409,
+              "INVALID_STATUS_TRANSITION",
+              `Ticket Status cannot change from ${ticket.currentStatus} to ${nextStatus}.`,
+              {
+                status:
+                  allowed.length > 0
+                    ? `Allowed next statuses: ${allowed.join(", ")}.`
+                    : "No further status transitions are allowed.",
+              }
+            );
+          }
+
+          if (nextStatus === TicketStatus.RESOLVED) {
+            const unmet = resolutionGateUnmet(
+              await loadResolutionGateInput(
+                tx,
+                ticketId,
+                ticket.ownerId
+              )
+            );
+
+            if (unmet.length > 0) {
+              throw new StatusChangeError(
+                409,
+                "RESOLUTION_GATE_NOT_MET",
+                "This Ticket cannot be resolved yet.",
+                { unmet: unmet.join(",") }
+              );
+            }
+          }
+
+          const result =
+            await tx.ticket.updateMany({
+              where: {
+                id: ticketId,
+                currentStatus:
+                  ticket.currentStatus,
+              },
+              data: {
+                currentStatus: nextStatus,
+              },
+            });
+
+          if (result.count !== 1) {
+            throw new StatusChangeError(
+              409,
+              "TICKET_CHANGED",
+              "The Ticket was changed by another user. Reload and try again."
+            );
+          }
+
+          return tx.ticket.findUnique({
+            where: { id: ticketId },
+            select: {
+              id: true,
+              currentStatus: true,
+              updatedAt: true,
+            },
+          });
         });
 
       return res.status(200).json({
         ticket: updated,
       });
     } catch (error) {
+      if (error instanceof StatusChangeError) {
+        return errorResponse(
+          res,
+          error.status,
+          error.code,
+          error.message,
+          error.details
+        );
+      }
+
       console.error(
         "Failed to update Ticket Status:",
         error

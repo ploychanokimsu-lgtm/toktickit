@@ -55,7 +55,7 @@ e2e/lab-04/
 | UNIT-03 | Unit | AC-05 | Description/Result trimmed; blank, 2001 chars | Rejected; 2000 accepted | `server/tests/lab-04/action-taken.validation.test.ts` | Pass |
 | UNIT-04 | Unit | AC-05 | actionAt > now + 5 min, before ticket.createdAt | Rejected | `server/tests/lab-04/action-taken.validation.test.ts` | Pass |
 | UNIT-05 | Unit | BR-09 | Attachment Notes empty → null, 501 chars rejected | As stated | `server/tests/lab-04/action-taken.validation.test.ts` | Pass |
-| UNIT-06 | Unit | AC-14 | Resolution gate evaluator: no owner / no actions / latest follow-up / satisfied | Correct `unmet` list | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| UNIT-06 | Unit | AC-14 | Resolution gate evaluator: no owner / no actions / latest follow-up / satisfied | Correct `unmet` list | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
 | UNIT-07 | Unit | BR-25 | "Last 7 days" boundary calculation | Includes exactly 7×24h | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
 
 ## 5. Actions Taken API Tests (#56)
@@ -97,18 +97,19 @@ e2e/lab-04/
 
 | Test ID | Type | Req / AC | What It Tests | Expected Result | Automated Test File | Final |
 |---|---|---|---|---|---|---|
-| WF-01 | API | AC-13 | Every permitted transition in BR-19 (table-driven) | 200, status updated | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| WF-02 | API | AC-13 | Every non-permitted transition (table-driven) | 409 `INVALID_STATUS_TRANSITION`; unchanged | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| WF-03 | API | AC-14 | RESOLVED with no owner | 409 `RESOLUTION_GATE_NOT_MET` (`NO_OWNER`) | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| WF-04 | API | AC-14 | RESOLVED with zero actions | 409 (`NO_ACTIONS_TAKEN`) | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| WF-05 | API | AC-14 | RESOLVED when latest action needs follow-up | 409 (`LATEST_ACTION_NEEDS_FOLLOW_UP`) | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| WF-06 | API | AC-15 | RESOLVED with gate satisfied | 200 | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| WF-07 | API | AC-16 | Stale `expectedStatus` | 409 `TICKET_CHANGED` | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| WF-08 | API | D-05 | Missing `expectedStatus` | 400 | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| WF-09 | API | AC-17 | Problem Appears Resolved | Status unchanged; `/workflow` shows indication | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| WF-10 | API | FR-12 | `GET /workflow` allowedNextStatuses + gate | Matches matrix and gate | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| WF-11 | API | AC-13 | Requester PATCH status | 403 | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
-| WF-12 | API | BR-23 | REOPENED keeps existing actions | Actions count unchanged | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
+| WF-01 | API | AC-13 | Every permitted transition in BR-19 (table-driven) | 200, status updated | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-02 | API | AC-13 | Every non-permitted transition (table-driven) | 409 `INVALID_STATUS_TRANSITION`; unchanged | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-03 | API | AC-14 | RESOLVED with no owner | 409 `RESOLUTION_GATE_NOT_MET` (`NO_OWNER`) | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-04 | API | AC-14 | RESOLVED with zero actions | 409 (`NO_ACTIONS_TAKEN`) | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-05 | API | AC-14 | RESOLVED when latest action needs follow-up | 409 (`LATEST_ACTION_NEEDS_FOLLOW_UP`) | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-06 | API | AC-15 | RESOLVED with gate satisfied | 200 | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-07 | API | AC-16 | Stale `expectedStatus` | 409 `TICKET_CHANGED` | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-08 | API | D-05 | Missing `expectedStatus` | 400 | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-13 | Regression | D-05 | Lab 3 status tests and Lab 3 E2E updated for `expectedStatus` and the confirmation dialog | Pass | `server/tests/lab-03/staff-ticket-operations.api.test.ts`, `client/tests/lab-03/StaffTicketDetail.test.tsx`, `e2e/lab-03/staff-workflow.spec.ts` | Pass |
+| WF-09 | API | AC-17 | Problem Appears Resolved | Status unchanged; `/workflow` shows indication | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-10 | API | FR-12 | `GET /workflow` allowedNextStatuses + gate | Matches matrix and gate | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-11 | API | AC-13 | Requester PATCH status | 403 | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-12 | API | BR-23 | REOPENED keeps existing actions | Actions count unchanged | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
 
 ## 8. Dashboard API Tests (#59, #60)
 
@@ -153,10 +154,10 @@ e2e/lab-04/
 | UI-06 | Component | AC-08 | Edit 409 shows conflict + Reload, keeps edits | Shown | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
 | UI-07 | Component | AC-07 | Requester mode is read-only | No Add/Edit buttons | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
 | UI-08 | Component | AC-09 | Edit button only when canEdit | As stated | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
-| UI-09 | Component | FR-12 | Status control lists only allowed statuses | Matches `/workflow` | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
-| UI-10 | Component | AC-14 | Resolved disabled with reason messages | Reasons shown | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
-| UI-11 | Component | AC-15 | Success refreshes header status | New badge | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
-| UI-12 | Component | AC-16 | 409 TICKET_CHANGED shows reload message | Shown | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
+| UI-09 | Component | FR-12 | Status control lists only allowed statuses | Matches `/workflow` | `client/tests/lab-04/TicketWorkflow.test.tsx` | Pass |
+| UI-10 | Component | AC-14 | Resolved disabled with reason messages | Reasons shown | `client/tests/lab-04/TicketWorkflow.test.tsx` | Pass |
+| UI-11 | Component | AC-15 | Success refreshes header status | New badge | `client/tests/lab-04/TicketWorkflow.test.tsx` | Pass |
+| UI-12 | Component | AC-16 | 409 TICKET_CHANGED shows reload message | Shown | `client/tests/lab-04/TicketWorkflow.test.tsx` | Pass |
 | UI-13 | Component | AC-02 | Requester dashboard cards and lists render | Values and links | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
 | UI-14 | Component | AC-20 | Requester dashboard zeros and empty lists | 0 and empty text | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
 | UI-15 | Component | FR-26 | Requester dashboard loading / error / retry | States shown | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
@@ -184,8 +185,8 @@ e2e/lab-04/
 |---|---|---|---|---|---|---|
 | E2E-01 | E2E | AC-01, AC-03 | Staff A and Staff B each add an action on one Ticket; both appear in order | Pass | `e2e/lab-04/actions-taken-flow.spec.ts` | Pass |
 | E2E-02 | E2E | AC-07 | Requester signs in and sees actions read-only | Pass | `e2e/lab-04/actions-taken-flow.spec.ts` | Pass |
-| E2E-03 | E2E | AC-14, AC-15 | Lifecycle: New → In Progress → Resolve blocked → add action → Resolved → Closed | Pass | `e2e/lab-04/ticket-resolution.spec.ts` | Planned |
-| E2E-04 | E2E | AC-13 | Cancel path: New → Cancelled; actions read-only | Pass | `e2e/lab-04/ticket-resolution.spec.ts` | Planned |
+| E2E-03 | E2E | AC-14, AC-15 | Lifecycle: New → In Progress → Resolve blocked → add action → Resolved → Closed | Pass | `e2e/lab-04/ticket-resolution.spec.ts` | Pass |
+| E2E-04 | E2E | AC-13 | Cancel path: New → Cancelled; actions read-only | Pass | `e2e/lab-04/ticket-resolution.spec.ts` | Pass |
 | E2E-05 | E2E | AC-02, AC-21 | Requester dashboard drill-down to filtered My Tickets and Ticket Detail | Pass | `e2e/lab-04/dashboards.spec.ts` | Planned |
 | E2E-06 | E2E | AC-18, AC-21 | Staff dashboard drill-down to filtered queue and Ticket Detail | Pass | `e2e/lab-04/dashboards.spec.ts` | Planned |
 | E2E-07 | E2E | AC-22 | Admin dashboard, Ticket Queue, User Management reachable | Pass | `e2e/lab-04/dashboards.spec.ts` | Planned |
@@ -220,7 +221,7 @@ e2e/lab-04/
 | AC-22 | DASH-09, UI-18, E2E-07 |
 | AC-23 | MIG-01, MIG-02 |
 | AC-24 | MIG-03 |
-| AC-25 | REG-01 to REG-05 |
+| AC-25 | REG-01 to REG-05, WF-13 |
 | AC-26 | RESP-01, RESP-02, RESP-03 |
 | AC-27 | A11Y-01, A11Y-02 |
 | AC-28 | UI-04, UI-05 |

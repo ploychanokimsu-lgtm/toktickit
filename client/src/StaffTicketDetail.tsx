@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import ActionsTaken from "./ActionsTaken.js";
+import TicketWorkflowControl from "./TicketWorkflowControl.js";
 
 const DETAIL_API_URL =
   import.meta.env.VITE_API_URL ??
@@ -303,6 +304,15 @@ export default function StaffTicketDetail({
           <p className="tk-page-description">
             {ticket.summary}
           </p>
+
+          <p className="tk-page-description">
+            <span
+              className="tk-badge tk-badge-neutral"
+              data-testid="ticket-status-badge"
+            >
+              Status: {formatLabel(ticket.currentStatus)}
+            </span>
+          </p>
         </div>
 
         <button
@@ -465,50 +475,12 @@ export default function StaffTicketDetail({
               </select>
             </div>
 
-            <div className="tk-form-group">
-              <label
-                className="tk-label"
-                htmlFor="detail-status"
-              >
-                Status
-              </label>
-
-              <select
-                id="detail-status"
-                className="tk-select"
-                value={ticket.currentStatus}
-                disabled={saving}
-                onChange={(event) =>
-                  void performOperation(
-                    `/api/staff/tickets/${ticketId}/status`,
-                    "PATCH",
-                    {
-                      status:
-                        event.target.value,
-                    },
-                    "Ticket Status updated."
-                  )
-                }
-              >
-                {[
-                  "NEW",
-                  "OPEN",
-                  "IN_PROGRESS",
-                  "WAITING_FOR_REQUESTER",
-                  "RESOLVED",
-                  "CLOSED",
-                  "REOPENED",
-                  "CANCELLED",
-                ].map((status) => (
-                  <option
-                    key={status}
-                    value={status}
-                  >
-                    {formatLabel(status)}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <TicketWorkflowControl
+              ticketId={ticket.id}
+              currentStatus={ticket.currentStatus}
+              refreshKey={ticket.updatedAt}
+              onChanged={() => void load()}
+            />
           </div>
 
           {!ticket.owner && (

@@ -153,13 +153,14 @@ A read-only "Actions Taken" section with the same fields (no version or editor i
 
 ## 6. Ticket Workflow Controls
 
-- The status control lists `allowedNextStatuses` from `GET …/workflow`.
+- The status control is a select labelled "Status". It lists the current status (marked "(current)") and the `allowedNextStatuses` from `GET …/workflow`. Choosing a status applies it immediately, except Closed and Cancelled, which ask for confirmation first.
 - If `RESOLVED` is allowed by the matrix but the gate is unmet, the "Resolved" option is shown **disabled**, and a message below lists the reasons in plain language:
   - "Assign a Ticket Owner." (`NO_OWNER`)
-  - "Record at least one Action Taken." (`NO_ACTIONS_TAKEN`)
-  - "The latest Action Taken needs follow-up. Record a follow-up action first." (`LATEST_ACTION_NEEDS_FOLLOW_UP`)
+  - "Record at least one completed Action Taken." (`NO_ACTIONS_TAKEN`)
+  - "The latest completed Action Taken needs follow-up. Record a follow-up action first." (`LATEST_ACTION_NEEDS_FOLLOW_UP`)
+  - "Complete or cancel the planned Actions Taken." (`PLANNED_ACTIONS_REMAIN`)
 - If the Requester has indicated the problem appears resolved, an info badge shows "Requester says problem appears resolved · <time>".
-- "Change Status" is disabled while saving. On success the Ticket header status badge and updated time refresh, and the workflow state is re-fetched.
+- The select is disabled while saving. On success a confirmation message is shown, the Ticket header status badge ("Status: …") and Last Updated refresh, and the workflow state is re-fetched. Recording an Action Taken also re-fetches the workflow, so Resolved becomes available as soon as the gate is met.
 - A 409 `TICKET_CHANGED` response shows "This ticket was updated by someone else," with a Reload button.
 - Changing to `CANCELLED` or `CLOSED` asks for confirmation in an accessible dialog (focus trapped, Escape closes it, focus returns to the trigger).
 
