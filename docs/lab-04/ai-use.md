@@ -27,7 +27,9 @@ The student team remained responsible for reviewing every document, confirming o
 
 | 7 | "Review is done merge and start next one." (Issue #59, Requester Dashboard) | Added the Requester dashboard API and screen with drill-down into a new My Tickets status filter. Screenshot review found two earlier-lab UI defects affecting the dashboard evidence: unreadable navigation and a fixed "New" status badge in My Tickets. Both were fixed. |
 
-(Prompts 8–10 will be added during implementation issues #60–#61.)
+| 8 | "Merge done start next!" (Issue #60, IT Staff and Administrator Dashboard) | Added the staff dashboard API and screen, combined the IT Staff and Administrator workspaces so Administrators reach the Ticket Queue (D-03), let the queue accept drill-down filters including a multi-status list, and added a seeded staff member with no assigned Tickets for the zero state. Tests compare every count with a direct database query. |
+
+(Prompts 9–10 will be added in Issue #61.)
 
 ---
 

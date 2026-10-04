@@ -78,6 +78,17 @@ vi.mock(
     ),
   })
 );
+vi.mock(
+  "../../src/StaffDashboard.js",
+  () => ({
+    default: () => (
+      <section>
+        <h1>Mock Staff Dashboard</h1>
+      </section>
+    ),
+  })
+);
+
 vi.mock("../../src/App.js", () => ({
   default: () => (
     <div>Mock Requester Workspace</div>
@@ -184,6 +195,19 @@ describe("Lab3App", () => {
 
     expect(
       await screen.findByRole("heading", {
+        name: "Mock Staff Dashboard",
+      })
+    ).toBeInTheDocument();
+
+    // Lab 4: operational users land on the Dashboard first.
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Staff Ticket Queue",
+      })
+    );
+
+    expect(
+      await screen.findByRole("heading", {
         name: "Mock Staff Ticket Queue",
       })
     ).toBeInTheDocument();
@@ -200,6 +224,20 @@ describe("Lab3App", () => {
     );
 
     render(<Lab3App />);
+
+    // Lab 4 D-03: Administrators also see the Dashboard and Ticket Queue.
+    expect(
+      await screen.findByRole("button", {
+        name: "Staff Ticket Queue",
+      })
+    ).toBeInTheDocument();
+
+    // Lab 4: operational users land on the Dashboard first.
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "User Management",
+      })
+    );
 
     expect(
       await screen.findByRole("heading", {
@@ -317,6 +355,13 @@ describe("Lab3App", () => {
     );
 
     render(<Lab3App />);
+
+    // Lab 4: operational users land on the Dashboard first.
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Staff Ticket Queue",
+      })
+    );
 
     fireEvent.click(
       await screen.findByRole("button", {

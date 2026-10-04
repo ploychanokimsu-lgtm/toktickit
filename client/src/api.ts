@@ -856,7 +856,8 @@ export interface StaffQueueQuery {
   categoryId?: number;
   requestedPriority?: RequestedPriority | "";
   itPriority?: RequestedPriority | "";
-  status?: TicketStatus | "";
+  // Lab 4: one status or a comma-separated list.
+  status?: TicketStatus | string;
   assignment?:
     | "all"
     | "assigned"

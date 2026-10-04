@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 
 import MetricCard from "./components/MetricCard.js";
-import TicketStatusBadge from "./components/TicketStatusBadge.js";
+import DashboardTicketList from "./components/DashboardTicketList.js";
 import {
   getRequesterDashboard,
-  type DashboardTicket,
   type RequesterDashboardData,
 } from "./dashboard-api.js";
 
@@ -16,55 +15,6 @@ interface RequesterDashboardProps {
   onOpenTicket: (ticketId: number) => void;
   onCreateTicket: () => void;
   onViewMyTickets: () => void;
-}
-
-function formatDate(value: string): string {
-  return new Date(value).toLocaleString();
-}
-
-function TicketList({
-  title,
-  tickets,
-  emptyText,
-  onOpenTicket,
-}: {
-  title: string;
-  tickets: DashboardTicket[];
-  emptyText: string;
-  onOpenTicket: (ticketId: number) => void;
-}) {
-  return (
-    <section className="tk-card tk-dashboard-list" aria-label={title}>
-      <div className="tk-card-body">
-        <h2 className="tk-card-title">{title}</h2>
-
-        {tickets.length === 0 ? (
-          <p className="tk-help-text">{emptyText}</p>
-        ) : (
-          <ul className="tk-dashboard-tickets">
-            {tickets.map((ticket) => (
-              <li key={ticket.id}>
-                <button
-                  type="button"
-                  className="tk-dashboard-ticket-link"
-                  onClick={() => onOpenTicket(ticket.id)}
-                >
-                  {ticket.ticketNumber}
-                </button>
-                <span className="tk-dashboard-summary" title={ticket.summary}>
-                  {ticket.summary}
-                </span>
-                <span className="tk-dashboard-meta">
-                  <TicketStatusBadge status={ticket.currentStatus} />
-                  <time dateTime={ticket.updatedAt}>{formatDate(ticket.updatedAt)}</time>
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </section>
-  );
 }
 
 export default function RequesterDashboard({
@@ -163,13 +113,13 @@ export default function RequesterDashboard({
 
           <div className="tk-dashboard-columns">
             <div className="tk-dashboard-main">
-              <TicketList
+              <DashboardTicketList
                 title="Recently Updated"
                 tickets={data.recentlyUpdated}
                 emptyText="No tickets updated in the last 7 days."
                 onOpenTicket={onOpenTicket}
               />
-              <TicketList
+              <DashboardTicketList
                 title="Recently Resolved"
                 tickets={data.recentlyResolved}
                 emptyText="No recently resolved tickets."

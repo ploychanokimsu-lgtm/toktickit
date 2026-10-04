@@ -56,7 +56,7 @@ e2e/lab-04/
 | UNIT-04 | Unit | AC-05 | actionAt > now + 5 min, before ticket.createdAt | Rejected | `server/tests/lab-04/action-taken.validation.test.ts` | Pass |
 | UNIT-05 | Unit | BR-09 | Attachment Notes empty → null, 501 chars rejected | As stated | `server/tests/lab-04/action-taken.validation.test.ts` | Pass |
 | UNIT-06 | Unit | AC-14 | Resolution gate evaluator: no owner / no actions / latest follow-up / satisfied | Correct `unmet` list | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
-| UNIT-07 | Unit | BR-25 | "Last 7 days" boundary calculation | Includes exactly 7×24h | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
+| UNIT-07 | Unit | BR-25 | "Last 7 days" boundary calculation | Includes exactly 7×24h | `server/tests/lab-04/staff-dashboard.api.test.ts` | Pass |
 
 ## 5. Actions Taken API Tests (#56)
 
@@ -88,8 +88,8 @@ e2e/lab-04/
 | SEC-02 | Security | AC-06 | Requester PATCH staff actions-taken | 403 | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
 | SEC-03 | Security | AC-07 | Requester lists actions on owned Ticket | 200 read-only shape (no version/canEdit) | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
 | SEC-04 | Security | AC-07 | Requester lists actions on another's Ticket | 404 safe | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
-| SEC-05 | Security | AC-19 | Unauthenticated on every Lab 4 endpoint | 401 | `server/tests/lab-04/*.api.test.ts` | Pass (Actions Taken, workflow, Requester dashboard); staff dashboard in #60 |
-| SEC-06 | Security | AC-19 | Requester → staff dashboard; IT Staff → requester dashboard | 403 | `server/tests/lab-04/*-dashboard.api.test.ts` | Pass (Requester dashboard); staff dashboard in #60 |
+| SEC-05 | Security | AC-19 | Unauthenticated on every Lab 4 endpoint | 401 | `server/tests/lab-04/*.api.test.ts` | Pass |
+| SEC-06 | Security | AC-19 | Requester → staff dashboard; IT Staff → requester dashboard | 403 | `server/tests/lab-04/*-dashboard.api.test.ts` | Pass |
 | SEC-07 | Security | BR-34 | Responses contain no passwordHash, email of other users, stack | Absent | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
 | SEC-08 | Security | Lab 3 BR-11 | User with mustChangePassword calls Lab 4 endpoints | 403 `PASSWORD_CHANGE_REQUIRED` | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
 
@@ -105,6 +105,7 @@ e2e/lab-04/
 | WF-06 | API | AC-15 | RESOLVED with gate satisfied | 200 | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
 | WF-07 | API | AC-16 | Stale `expectedStatus` | 409 `TICKET_CHANGED` | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
 | WF-08 | API | D-05 | Missing `expectedStatus` | 400 | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
+| WF-14 | Regression | FR-20, D-03 | Lab 3 app tests and Lab 3 E2E updated: operational users land on the Dashboard and open the queue or User Management from the navigation | Pass | `client/tests/lab-03/Lab3App.test.tsx`, `e2e/lab-03/staff-workflow.spec.ts` | Pass |
 | WF-13 | Regression | D-05 | Lab 3 status tests and Lab 3 E2E updated for `expectedStatus` and the confirmation dialog | Pass | `server/tests/lab-03/staff-ticket-operations.api.test.ts`, `client/tests/lab-03/StaffTicketDetail.test.tsx`, `e2e/lab-03/staff-workflow.spec.ts` | Pass |
 | WF-09 | API | AC-17 | Problem Appears Resolved | Status unchanged; `/workflow` shows indication | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
 | WF-10 | API | FR-12 | `GET /workflow` allowedNextStatuses + gate | Matches matrix and gate | `server/tests/lab-04/ticket-workflow.api.test.ts` | Pass |
@@ -120,12 +121,12 @@ e2e/lab-04/
 | DASH-03 | API | AC-20 | Requester with no Tickets | All 0, lists [] | `server/tests/lab-04/requester-dashboard.api.test.ts` | Pass |
 | DASH-04 | API | AC-21 | Requester drill-down queries | Match BR-27 table | `server/tests/lab-04/requester-dashboard.api.test.ts` | Pass |
 | DASH-05 | API | FR-21 | My Tickets `?status=` single, list, invalid | Filtered; 400 on invalid | `server/tests/lab-04/requester-dashboard.api.test.ts` | Pass |
-| DASH-06 | API | AC-18 | Staff counts equal direct Prisma queries (unassigned, myAssigned, byStatus×8, byItPriority×3, myActions7d) | Equal | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
-| DASH-07 | API | AC-18 | `myAssigned` / `myActions` differ per signed-in staff | Session-specific | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
-| DASH-08 | API | BR-28 | Urgent = active HIGH, oldest first, ≤5 | Correct order/limit | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
-| DASH-09 | API | AC-22 | Admin gets `usersByRole`; staff gets null | As stated | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
-| DASH-10 | API | FR-22 | Queue accepts comma-separated `status` | Filtered correctly | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
-| DASH-11 | API | FR-19 | Response size: lists ≤ 5, no full collections | Lengths ≤ 5 | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
+| DASH-06 | API | AC-18 | Staff counts equal direct Prisma queries (unassigned, myAssigned, byStatus×8, byItPriority×3, myActions7d) | Equal | `server/tests/lab-04/staff-dashboard.api.test.ts` | Pass |
+| DASH-07 | API | AC-18 | `myAssigned` / `myActions` differ per signed-in staff | Session-specific | `server/tests/lab-04/staff-dashboard.api.test.ts` | Pass |
+| DASH-08 | API | BR-28 | Urgent = active HIGH, oldest first, ≤5 | Correct order/limit | `server/tests/lab-04/staff-dashboard.api.test.ts` | Pass |
+| DASH-09 | API | AC-22 | Admin gets `usersByRole`; staff gets null | As stated | `server/tests/lab-04/staff-dashboard.api.test.ts` | Pass |
+| DASH-10 | API | FR-22 | Queue accepts comma-separated `status` | Filtered correctly | `server/tests/lab-04/staff-dashboard.api.test.ts` | Pass |
+| DASH-11 | API | FR-19 | Response size: lists ≤ 5, no full collections | Lengths ≤ 5 | `server/tests/lab-04/staff-dashboard.api.test.ts` | Pass |
 
 ## 9. Migration, Seed, and Regression Tests
 
@@ -139,7 +140,7 @@ e2e/lab-04/
 | REG-03 | Regression | AC-25 | All Lab 3 server tests (status tests updated for `expectedStatus`, D-05) | Pass | `server/tests/lab-03/*` | Planned |
 | REG-04 | Regression | AC-25 | All Lab 1–3 client tests | Pass | `client/tests/lab-0{1,2,3}/*` | Planned |
 | REG-05 | Regression | AC-25 | Lab 2 and Lab 3 Playwright suites | Pass | `e2e/lab-02/*`, `e2e/lab-03/*` | Planned |
-| PERF-01 | Perf-smoke | FR-19 | Dashboards with seed + 500 extra Tickets respond < 500 ms locally | < 500 ms | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
+| PERF-01 | Perf-smoke | FR-19 | Dashboards with seed + 500 extra Tickets respond < 500 ms locally | < 500 ms | `server/tests/lab-04/staff-dashboard.api.test.ts` | Pass |
 | PERF-02 | Perf-smoke | BR-15 | List 50 actions on one Ticket < 300 ms | < 300 ms | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
 
 ## 10. UI Component Tests
@@ -162,10 +163,10 @@ e2e/lab-04/
 | UI-14 | Component | AC-20 | Requester dashboard zeros and empty lists | 0 and empty text | `client/tests/lab-04/RequesterDashboard.test.tsx` | Pass |
 | UI-15 | Component | FR-26 | Requester dashboard loading / error / retry | States shown | `client/tests/lab-04/RequesterDashboard.test.tsx` | Pass |
 | UI-16 | Component | AC-21 | Requester "View all" links carry status filter | Correct href/route | `client/tests/lab-04/RequesterDashboard.test.tsx` | Pass |
-| UI-17 | Component | AC-18 | Staff dashboard cards, chips, urgent/recent lists | Rendered | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
-| UI-18 | Component | AC-22 | Admin sees Users by Role; staff does not | As stated | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
-| UI-19 | Component | FR-26 | Staff dashboard loading / empty / 403 / error / Refresh | States shown | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
-| UI-20 | Component | FR-20 | Nav shows Dashboard per role with aria-current | Correct | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
+| UI-17 | Component | AC-18 | Staff dashboard cards, chips, urgent/recent lists | Rendered | `client/tests/lab-04/StaffDashboard.test.tsx` | Pass |
+| UI-18 | Component | AC-22 | Admin sees Users by Role; staff does not | As stated | `client/tests/lab-04/StaffDashboard.test.tsx` | Pass |
+| UI-19 | Component | FR-26 | Staff dashboard loading / empty / 403 / error / Refresh | States shown | `client/tests/lab-04/StaffDashboard.test.tsx` | Pass |
+| UI-20 | Component | FR-20 | Nav shows Dashboard per role with aria-current | Correct | `client/tests/lab-03/Lab3App.test.tsx`, `client/tests/lab-04/RequesterDashboard.test.tsx`, `e2e/lab-04/dashboards.spec.ts` | Pass |
 
 ## 11. UI Style, Responsive, and Accessibility Tests
 
@@ -176,7 +177,7 @@ e2e/lab-04/
 | A11Y-01 | Accessibility | AC-27 | Form controls labelled; errors linked via aria-describedby | Pass | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
 | A11Y-02 | Accessibility | AC-27 | Keyboard: Tab reaches all drill-downs and action controls; Enter activates | Pass | `e2e/lab-04/dashboards.spec.ts` | Planned |
 | RESP-01 | Responsive | AC-26 | Requester dashboard at 1280/768/375: no horizontal overflow | scrollWidth ≤ innerWidth | `e2e/lab-04/dashboards.spec.ts` | Pass |
-| RESP-02 | Responsive | AC-26 | Staff dashboard at 1280/768/375 | No overflow | `e2e/lab-04/dashboards.spec.ts` | Planned |
+| RESP-02 | Responsive | AC-26 | Staff dashboard at 1280/768/375 | No overflow | `e2e/lab-04/dashboards.spec.ts` | Pass |
 | RESP-03 | Responsive | AC-26 | Actions Taken list/form at 1280/768/375 | No overflow, stacked cards on mobile | `e2e/lab-04/actions-taken-flow.spec.ts` | Pass |
 
 ## 12. End-to-End Tests
@@ -188,8 +189,8 @@ e2e/lab-04/
 | E2E-03 | E2E | AC-14, AC-15 | Lifecycle: New → In Progress → Resolve blocked → add action → Resolved → Closed | Pass | `e2e/lab-04/ticket-resolution.spec.ts` | Pass |
 | E2E-04 | E2E | AC-13 | Cancel path: New → Cancelled; actions read-only | Pass | `e2e/lab-04/ticket-resolution.spec.ts` | Pass |
 | E2E-05 | E2E | AC-02, AC-21 | Requester dashboard drill-down to filtered My Tickets and Ticket Detail | Pass | `e2e/lab-04/dashboards.spec.ts` | Pass |
-| E2E-06 | E2E | AC-18, AC-21 | Staff dashboard drill-down to filtered queue and Ticket Detail | Pass | `e2e/lab-04/dashboards.spec.ts` | Planned |
-| E2E-07 | E2E | AC-22 | Admin dashboard, Ticket Queue, User Management reachable | Pass | `e2e/lab-04/dashboards.spec.ts` | Planned |
+| E2E-06 | E2E | AC-18, AC-21 | Staff dashboard drill-down to filtered queue and Ticket Detail | Pass | `e2e/lab-04/dashboards.spec.ts` | Pass |
+| E2E-07 | E2E | AC-22 | Admin dashboard, Ticket Queue, User Management reachable | Pass | `e2e/lab-04/dashboards.spec.ts` | Pass |
 
 ---
 
@@ -221,7 +222,7 @@ e2e/lab-04/
 | AC-22 | DASH-09, UI-18, E2E-07 |
 | AC-23 | MIG-01, MIG-02 |
 | AC-24 | MIG-03 |
-| AC-25 | REG-01 to REG-05, WF-13 |
+| AC-25 | REG-01 to REG-05, WF-13, WF-14 |
 | AC-26 | RESP-01, RESP-02, RESP-03 |
 | AC-27 | A11Y-01, A11Y-02 |
 | AC-28 | UI-04, UI-05 |

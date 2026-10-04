@@ -73,3 +73,18 @@ export async function fetchDashboard<T>(path: string): Promise<T> {
 export function getRequesterDashboard(): Promise<RequesterDashboardData> {
   return fetchDashboard<RequesterDashboardData>("/api/dashboard/requester");
 }
+
+export interface StaffDashboardData {
+  generatedAt: string;
+  timeZone: string;
+  metrics: DashboardMetric[];
+  byStatus: { status: string; count: number; drillDown: DrillDown }[];
+  byItPriority: { itPriority: string; count: number; drillDown: DrillDown }[];
+  urgent: DashboardTicket[];
+  recentlyUpdated: DashboardTicket[];
+  usersByRole: { REQUESTER: number; IT_STAFF: number; ADMINISTRATOR: number } | null;
+}
+
+export function getStaffDashboard(): Promise<StaffDashboardData> {
+  return fetchDashboard<StaffDashboardData>("/api/dashboard/staff");
+}

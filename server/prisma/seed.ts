@@ -151,6 +151,13 @@ async function main() {
       role: "IT_STAFF",
       isActive: true,
     },
+    // Lab 4: active IT Staff with no assigned Tickets (zero dashboard metrics).
+    {
+      name: "Mali Kaewdee",
+      email: "mali.kaewdee@example.com",
+      role: "IT_STAFF",
+      isActive: true,
+    },
     {
       name: "David Lee",
       email: "david.lee@example.com",
