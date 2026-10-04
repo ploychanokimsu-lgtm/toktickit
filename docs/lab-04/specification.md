@@ -162,7 +162,7 @@ Lab 3 rules BR-01 to BR-96 remain in force unless amended below. Lab 4 numbering
 
 **BR-06** Action Description is required. Result is required when the action is Completed and optional while it is Planned. Both are trimmed and limited to 2000 characters.
 
-**BR-07** Action Date/Time is required and is stored in UTC. It must not be earlier than the Ticket's creation time. For Completed work it must not be more than 5 minutes in the future (clock skew); for Planned work it may be up to one year ahead.
+**BR-07** Action Date/Time is required and is stored in UTC. It must not be earlier than the minute in which the Ticket was created (date/time inputs have minute precision). For Completed work it must not be more than 5 minutes in the future (clock skew); for Planned work it may be up to one year ahead.
 
 **BR-08** When Follow-Up Required is true, Follow-up Note is required (1–1000 characters after trimming). When it is false, Follow-up Note is stored as `null` and any submitted value is discarded.
 

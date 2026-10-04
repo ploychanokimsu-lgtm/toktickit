@@ -296,7 +296,12 @@ export function validateActionTaken(
         ? context.now.getTime() + PLANNED_HORIZON_MS
         : context.now.getTime() + CLOCK_SKEW_MS;
 
-    if (actionAt.getTime() < context.ticketCreatedAt.getTime()) {
+    // Date/time inputs have minute precision, so an action recorded in the
+    // same minute the Ticket was created must still be accepted.
+    const earliestAllowed =
+      Math.floor(context.ticketCreatedAt.getTime() / 60_000) * 60_000;
+
+    if (actionAt.getTime() < earliestAllowed) {
       errors.actionAt =
         "Action Date/Time cannot be earlier than the Ticket was created.";
     } else if (actionAt.getTime() > latestAllowed) {

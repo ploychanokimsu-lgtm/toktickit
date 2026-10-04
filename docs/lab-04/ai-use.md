@@ -21,7 +21,9 @@ The student team remained responsible for reviewing every document, confirming o
 
 | 4 | "Let's get to the new issue … just do your thing." (Issue #56, Actions Taken Foundation) | Adopted Option B for D-01 and implemented the `ActionTaken` migration, idempotent seed, staff and Requester APIs, and 49 server tests. The full server suite was run against a dedicated local test database before committing. |
 
-(Prompts 5–10 will be added during implementation issues #57–#61.)
+| 5 | "Review merged, start #57." (Actions Taken UI) | Built the Actions Taken list, create, view and edit UI for staff and the read-only Requester view, with 15 component tests and 2 E2E tests. The E2E run found a real bug (an action recorded in the same minute as Ticket creation was rejected), which was fixed in the backend rule. |
+
+(Prompts 6–10 will be added during implementation issues #58–#61.)
 
 ---
 

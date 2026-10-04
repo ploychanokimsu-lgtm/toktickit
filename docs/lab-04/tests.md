@@ -16,6 +16,7 @@ Issue: #55. This plan was written **before** implementation (Test DD). Every row
 - Sessions: `server/tests/helpers/test-session.ts`.
 - Client: Vitest + Testing Library + jsdom.
 - E2E: Playwright with `playwright.lab4.config.ts` (the Lab 2 and Lab 3 configs are kept). Viewports: 1280×800, 768×1024, 375×812.
+- E2E environment (local only, never committed): `LAB3_INITIAL_PASSWORD` (seed password) and `LAB4_E2E_PASSWORD`. On the first run the E2E accounts change their initial password to `LAB4_E2E_PASSWORD` through the normal API. Each run creates its own Ticket, so runs are repeatable.
 - Commands:
   - `cd server && npm test && npm run build`
   - `cd client && npm test && npm run build`
@@ -144,14 +145,14 @@ e2e/lab-04/
 
 | Test ID | Type | Req / AC | What It Tests | Expected Result | Automated Test File | Final |
 |---|---|---|---|---|---|---|
-| UI-01 | Component | AC-12 | Actions list renders all fields in order; "Latest" label | Rendered | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
-| UI-02 | Component | AC-20 | Actions empty state | Empty text shown | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
-| UI-03 | Component | AC-04 | Follow-up checkbox reveals required note field; client validation | Field shown and required | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
-| UI-04 | Component | AC-28 | Save disabled while pending; double click sends one request | 1 request | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
-| UI-05 | Component | AC-28 | Server 400/500 keeps entered values | Values kept | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
-| UI-06 | Component | AC-08 | Edit 409 shows conflict + Reload, keeps edits | Shown | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
-| UI-07 | Component | AC-07 | Requester mode is read-only | No Add/Edit buttons | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
-| UI-08 | Component | AC-09 | Edit button only when canEdit | As stated | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
+| UI-01 | Component | AC-12 | Actions list renders all fields in order; "Latest" label | Rendered | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
+| UI-02 | Component | AC-20 | Actions empty state | Empty text shown | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
+| UI-03 | Component | AC-04 | Follow-up checkbox reveals required note field; client validation | Field shown and required | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
+| UI-04 | Component | AC-28 | Save disabled while pending; double click sends one request | 1 request | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
+| UI-05 | Component | AC-28 | Server 400/500 keeps entered values | Values kept | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
+| UI-06 | Component | AC-08 | Edit 409 shows conflict + Reload, keeps edits | Shown | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
+| UI-07 | Component | AC-07 | Requester mode is read-only | No Add/Edit buttons | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
+| UI-08 | Component | AC-09 | Edit button only when canEdit | As stated | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
 | UI-09 | Component | FR-12 | Status control lists only allowed statuses | Matches `/workflow` | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
 | UI-10 | Component | AC-14 | Resolved disabled with reason messages | Reasons shown | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
 | UI-11 | Component | AC-15 | Success refreshes header status | New badge | `client/tests/lab-04/TicketWorkflow.test.tsx` | Planned |
@@ -171,18 +172,18 @@ e2e/lab-04/
 |---|---|---|---|---|---|---|
 | STY-01 | UI style | V1 | Lab 4 components use Zen Green classes/tokens (no inline hex colors) | Pass | `client/tests/lab-04/ui-style.test.tsx` | Planned |
 | STY-02 | UI style | V8 | Status/follow-up badges include text | Text present | `client/tests/lab-04/ui-style.test.tsx` | Planned |
-| A11Y-01 | Accessibility | AC-27 | Form controls labelled; errors linked via aria-describedby | Pass | `client/tests/lab-04/ActionsTaken.test.tsx` | Planned |
+| A11Y-01 | Accessibility | AC-27 | Form controls labelled; errors linked via aria-describedby | Pass | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
 | A11Y-02 | Accessibility | AC-27 | Keyboard: Tab reaches all drill-downs and action controls; Enter activates | Pass | `e2e/lab-04/dashboards.spec.ts` | Planned |
 | RESP-01 | Responsive | AC-26 | Requester dashboard at 1280/768/375: no horizontal overflow | scrollWidth ≤ innerWidth | `e2e/lab-04/dashboards.spec.ts` | Planned |
 | RESP-02 | Responsive | AC-26 | Staff dashboard at 1280/768/375 | No overflow | `e2e/lab-04/dashboards.spec.ts` | Planned |
-| RESP-03 | Responsive | AC-26 | Actions Taken list/form at 1280/768/375 | No overflow, stacked cards on mobile | `e2e/lab-04/actions-taken-flow.spec.ts` | Planned |
+| RESP-03 | Responsive | AC-26 | Actions Taken list/form at 1280/768/375 | No overflow, stacked cards on mobile | `e2e/lab-04/actions-taken-flow.spec.ts` | Pass |
 
 ## 12. End-to-End Tests
 
 | Test ID | Type | Req / AC | What It Tests | Expected Result | Automated Test File | Final |
 |---|---|---|---|---|---|---|
-| E2E-01 | E2E | AC-01, AC-03 | Staff A and Staff B each add an action on one Ticket; both appear in order | Pass | `e2e/lab-04/actions-taken-flow.spec.ts` | Planned |
-| E2E-02 | E2E | AC-07 | Requester signs in and sees actions read-only | Pass | `e2e/lab-04/actions-taken-flow.spec.ts` | Planned |
+| E2E-01 | E2E | AC-01, AC-03 | Staff A and Staff B each add an action on one Ticket; both appear in order | Pass | `e2e/lab-04/actions-taken-flow.spec.ts` | Pass |
+| E2E-02 | E2E | AC-07 | Requester signs in and sees actions read-only | Pass | `e2e/lab-04/actions-taken-flow.spec.ts` | Pass |
 | E2E-03 | E2E | AC-14, AC-15 | Lifecycle: New → In Progress → Resolve blocked → add action → Resolved → Closed | Pass | `e2e/lab-04/ticket-resolution.spec.ts` | Planned |
 | E2E-04 | E2E | AC-13 | Cancel path: New → Cancelled; actions read-only | Pass | `e2e/lab-04/ticket-resolution.spec.ts` | Planned |
 | E2E-05 | E2E | AC-02, AC-21 | Requester dashboard drill-down to filtered My Tickets and Ticket Detail | Pass | `e2e/lab-04/dashboards.spec.ts` | Planned |

@@ -5,6 +5,8 @@ import {
   useState,
 } from "react";
 
+import ActionsTaken from "./ActionsTaken.js";
+
 const DETAIL_API_URL =
   import.meta.env.VITE_API_URL ??
   (import.meta.env.MODE === "test"
@@ -71,6 +73,7 @@ interface TicketDetail {
 interface StaffTicketDetailProps {
   ticketId: number;
   currentUserId: number;
+  currentUserName?: string;
   onBack: () => void;
 }
 
@@ -123,6 +126,7 @@ async function requestJson<T>(
 export default function StaffTicketDetail({
   ticketId,
   currentUserId,
+  currentUserName,
   onBack,
 }: StaffTicketDetailProps) {
   const [ticket, setTicket] =
@@ -535,6 +539,18 @@ export default function StaffTicketDetail({
           )}
         </div>
       </section>
+
+      <ActionsTaken
+        ticketId={ticket.id}
+        mode="staff"
+        ticketStatus={ticket.currentStatus}
+        currentUser={{
+          id: currentUserId,
+          name: currentUserName ?? "",
+        }}
+        staffMembers={staffMembers}
+        onChanged={() => void load()}
+      />
 
       <section className="tk-card">
         <div className="tk-card-body">
