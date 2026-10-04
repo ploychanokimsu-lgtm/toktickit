@@ -313,13 +313,19 @@ staffQueueRouter.get(
         itPriorityValue as RequestedPriority;
     }
 
-    let status: TicketStatus | undefined;
+    // Lab 4: one status or a comma-separated list (dashboard drill-down).
+    let status: TicketStatus[] | undefined;
 
     if (statusValue !== undefined) {
       if (
-        !STATUSES.includes(
-          statusValue as TicketStatus
-        )
+        statusValue
+          .split(",")
+          .some(
+            (value) =>
+              !STATUSES.includes(
+                value as TicketStatus
+              )
+          )
       ) {
         return errorResponse(
           res,
@@ -333,7 +339,9 @@ staffQueueRouter.get(
         );
       }
 
-      status = statusValue as TicketStatus;
+      status = statusValue.split(
+        ","
+      ) as TicketStatus[];
     }
 
     const assignmentValues:
@@ -476,7 +484,7 @@ staffQueueRouter.get(
         ? { itPriority }
         : {}),
       ...(status !== undefined
-        ? { currentStatus: status }
+        ? { currentStatus: { in: status } }
         : {}),
       ...(ownerId !== undefined
         ? { ownerId }
@@ -560,7 +568,7 @@ staffQueueRouter.get(
           requestedPriority:
             requestedPriority ?? null,
           itPriority: itPriority ?? null,
-          status: status ?? null,
+          status: statusValue ?? null,
           assignment,
           ownerId: ownerId ?? null,
           sort,

@@ -557,6 +557,8 @@ describe(
           .set("Cookie", staffCookie)
           .send({
             status: "OPEN",
+            // Lab 4 D-05: the client sends the status it last saw.
+            expectedStatus: "NEW",
           })
           .expect(200);
 
@@ -590,6 +592,7 @@ describe(
           .set("Cookie", staffCookie)
           .send({
             status: "CLOSED",
+            expectedStatus: "IN_PROGRESS",
           })
           .expect(409);
 

@@ -1,9 +1,13 @@
+import { formatDateTime } from "./format.js";
 import {
   type FormEvent,
   useCallback,
   useEffect,
   useState,
 } from "react";
+
+import ActionsTaken from "./ActionsTaken.js";
+import TicketWorkflowControl from "./TicketWorkflowControl.js";
 
 const DETAIL_API_URL =
   import.meta.env.VITE_API_URL ??
@@ -71,6 +75,7 @@ interface TicketDetail {
 interface StaffTicketDetailProps {
   ticketId: number;
   currentUserId: number;
+  currentUserName?: string;
   onBack: () => void;
 }
 
@@ -87,7 +92,7 @@ function formatLabel(value: string): string {
 }
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleString();
+  return formatDateTime(value);
 }
 
 async function requestJson<T>(
@@ -123,6 +128,7 @@ async function requestJson<T>(
 export default function StaffTicketDetail({
   ticketId,
   currentUserId,
+  currentUserName,
   onBack,
 }: StaffTicketDetailProps) {
   const [ticket, setTicket] =
@@ -299,6 +305,15 @@ export default function StaffTicketDetail({
           <p className="tk-page-description">
             {ticket.summary}
           </p>
+
+          <p className="tk-page-description">
+            <span
+              className="tk-badge tk-badge-neutral"
+              data-testid="ticket-status-badge"
+            >
+              Status: {formatLabel(ticket.currentStatus)}
+            </span>
+          </p>
         </div>
 
         <button
@@ -461,50 +476,12 @@ export default function StaffTicketDetail({
               </select>
             </div>
 
-            <div className="tk-form-group">
-              <label
-                className="tk-label"
-                htmlFor="detail-status"
-              >
-                Status
-              </label>
-
-              <select
-                id="detail-status"
-                className="tk-select"
-                value={ticket.currentStatus}
-                disabled={saving}
-                onChange={(event) =>
-                  void performOperation(
-                    `/api/staff/tickets/${ticketId}/status`,
-                    "PATCH",
-                    {
-                      status:
-                        event.target.value,
-                    },
-                    "Ticket Status updated."
-                  )
-                }
-              >
-                {[
-                  "NEW",
-                  "OPEN",
-                  "IN_PROGRESS",
-                  "WAITING_FOR_REQUESTER",
-                  "RESOLVED",
-                  "CLOSED",
-                  "REOPENED",
-                  "CANCELLED",
-                ].map((status) => (
-                  <option
-                    key={status}
-                    value={status}
-                  >
-                    {formatLabel(status)}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <TicketWorkflowControl
+              ticketId={ticket.id}
+              currentStatus={ticket.currentStatus}
+              refreshKey={ticket.updatedAt}
+              onChanged={() => void load()}
+            />
           </div>
 
           {!ticket.owner && (
@@ -535,6 +512,18 @@ export default function StaffTicketDetail({
           )}
         </div>
       </section>
+
+      <ActionsTaken
+        ticketId={ticket.id}
+        mode="staff"
+        ticketStatus={ticket.currentStatus}
+        currentUser={{
+          id: currentUserId,
+          name: currentUserName ?? "",
+        }}
+        staffMembers={staffMembers}
+        onChanged={() => void load()}
+      />
 
       <section className="tk-card">
         <div className="tk-card-body">

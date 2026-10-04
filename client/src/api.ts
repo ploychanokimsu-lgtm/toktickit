@@ -127,6 +127,9 @@ export interface TicketListQuery {
     | RequestedPriority
     | "";
 
+  // Lab 4: comma-separated Ticket statuses (dashboard drill-down).
+  status?: string;
+
   sortBy?:
     | "updatedAt"
     | "createdAt"
@@ -479,6 +482,13 @@ export async function getMyTickets(
     params.set(
       "requestedPriority",
       query.requestedPriority
+    );
+  }
+
+  if (query.status) {
+    params.set(
+      "status",
+      query.status
     );
   }
 
@@ -846,7 +856,8 @@ export interface StaffQueueQuery {
   categoryId?: number;
   requestedPriority?: RequestedPriority | "";
   itPriority?: RequestedPriority | "";
-  status?: TicketStatus | "";
+  // Lab 4: one status or a comma-separated list.
+  status?: TicketStatus | string;
   assignment?:
     | "all"
     | "assigned"

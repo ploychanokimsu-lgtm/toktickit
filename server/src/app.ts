@@ -2,6 +2,11 @@ import { requesterCompletionRouter } from "./requester-completion.js";
 import { adminUsersRouter } from "./admin-users.js";
 import { staffQueueRouter } from "./staff-queue.js";
 import { staffTicketOperationsRouter } from "./staff-ticket-operations.js";
+import {
+  requesterActionsTakenRouter,
+  staffActionsTakenRouter,
+} from "./actions-taken.js";
+import { dashboardRouter } from "./dashboards.js";
 
 import cors from "cors";
 import express, {
@@ -13,6 +18,7 @@ import multer from "multer";
 
 import {
   Prisma,
+  TicketStatus,
   type RequestedPriority,
 } from "@prisma/client";
 
@@ -465,9 +471,23 @@ app.use(
   "/api/staff/tickets",
   staffTicketOperationsRouter
 );
+// Lab 4 Actions Taken
+app.use(
+  "/api/staff/tickets",
+  staffActionsTakenRouter
+);
 app.use(
   "/api/tickets",
   requesterCompletionRouter
+);
+app.use(
+  "/api/tickets",
+  requesterActionsTakenRouter
+);
+// Lab 4 dashboards
+app.use(
+  "/api/dashboard",
+  dashboardRouter
 );
 app.use("/api", (req, res, next) => {
   if (req.path === "/health") {
@@ -693,6 +713,12 @@ app.get(
             .requestedPriority
         );
 
+      // Lab 4: comma-separated status filter for dashboard drill-down.
+      const statusRaw =
+        queryString(
+          req.query.status
+        );
+
       const sortByRaw =
         queryString(
           req.query.sortBy
@@ -810,6 +836,37 @@ app.get(
           requestedPriorityRaw as RequestedPriority;
       }
 
+      let statuses:
+        | TicketStatus[]
+        | undefined;
+
+      if (
+        statusRaw !==
+        undefined
+      ) {
+        const values =
+          statusRaw.split(",");
+
+        if (
+          values.some(
+            (value) =>
+              !(
+                Object.values(
+                  TicketStatus
+                ) as string[]
+              ).includes(value)
+          )
+        ) {
+          return validationError(
+            res,
+            "Status filter is invalid."
+          );
+        }
+
+        statuses =
+          values as TicketStatus[];
+      }
+
       if (
         !ALLOWED_SORT_FIELDS.includes(
           sortByRaw as AllowedSortField
@@ -864,6 +921,15 @@ app.get(
           undefined
             ? {
                 requestedPriority,
+              }
+            : {}),
+
+          ...(statuses !==
+          undefined
+            ? {
+                currentStatus: {
+                  in: statuses,
+                },
               }
             : {}),
 

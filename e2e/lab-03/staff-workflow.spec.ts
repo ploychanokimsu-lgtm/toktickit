@@ -89,6 +89,13 @@ async function signIn(
     );
   }
 
+  // Lab 4: IT Staff land on the Dashboard first.
+  await page
+    .getByRole("button", {
+      name: "Staff Ticket Queue",
+    })
+    .click();
+
   await expect(
     page.getByRole("heading", {
       name: "IT Staff Ticket Queue",
@@ -332,6 +339,22 @@ test(
       await status.selectOption(
         newStatus
       );
+
+      // Lab 4: Closed and Cancelled ask for confirmation first.
+      const confirmDialog =
+        page.getByRole("dialog");
+
+      if (
+        await confirmDialog
+          .isVisible()
+          .catch(() => false)
+      ) {
+        await confirmDialog
+          .getByRole("button", {
+            name: /^Yes,/,
+          })
+          .click();
+      }
 
       const statusResponse =
         await statusResponsePromise;

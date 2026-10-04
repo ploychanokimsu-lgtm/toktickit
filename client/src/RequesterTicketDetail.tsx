@@ -1,3 +1,6 @@
+import { formatDateTime } from "./format.js";
+import ActionsTaken from "./ActionsTaken.js";
+import { formatStatusLabel } from "./components/TicketStatusBadge.js";
 import RequesterCompletionPanel from "./RequesterCompletionPanel.js";
 import {
   type ChangeEvent,
@@ -46,9 +49,7 @@ const ALLOWED_MIME_TYPES = [
 function formatDate(
   value: string
 ): string {
-  return new Date(
-    value
-  ).toLocaleString();
+  return formatDateTime(value);
 }
 
 function formatFileSize(
@@ -733,9 +734,9 @@ export default function RequesterTicketDetail({
                             ticket.requestedPriority
                           )}`}
                         >
-                          {
+                          {formatStatusLabel(
                             ticket.requestedPriority
-                          }
+                          )}
                         </span>
                       </div>
                     </div>
@@ -754,9 +755,9 @@ export default function RequesterTicketDetail({
                               ticket.itPriority
                             )}`}
                           >
-                            {
+                            {formatStatusLabel(
                               ticket.itPriority
-                            }
+                            )}
                           </span>
                         ) : (
                           "Not assigned"
@@ -823,6 +824,12 @@ export default function RequesterTicketDetail({
                 </div>
               </div>
             </section>
+
+            <ActionsTaken
+              ticketId={ticket.id}
+              mode="requester"
+              ticketStatus={ticket.currentStatus}
+            />
 
             <RequesterCompletionPanel
               ticketId={ticket.id}

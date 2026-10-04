@@ -1,4 +1,5 @@
-﻿import {
+﻿import { formatDateTime } from "./format.js";
+import {
   type FormEvent,
   useCallback,
   useEffect,
@@ -24,9 +25,7 @@ interface RequesterCompletionPanelProps {
 function formatDate(
   value: string
 ): string {
-  return new Date(
-    value
-  ).toLocaleString();
+  return formatDateTime(value);
 }
 
 function roleLabel(
