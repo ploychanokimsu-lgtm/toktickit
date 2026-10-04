@@ -49,11 +49,11 @@ e2e/lab-04/
 
 | Test ID | Type | Req / AC | What It Tests | Expected Result | Automated Test File | Final |
 |---|---|---|---|---|---|---|
-| UNIT-01 | Unit | AC-04 | Follow-up Note required when followUpRequired = true | Validation error on `followUpNote` | `server/tests/lab-04/action-taken.validation.test.ts` | Planned |
-| UNIT-02 | Unit | BR-08 | Follow-up Note discarded when followUpRequired = false | Stored as null | `server/tests/lab-04/action-taken.validation.test.ts` | Planned |
-| UNIT-03 | Unit | AC-05 | Description/Result trimmed; blank, 2001 chars | Rejected; 2000 accepted | `server/tests/lab-04/action-taken.validation.test.ts` | Planned |
-| UNIT-04 | Unit | AC-05 | actionAt > now + 5 min, before ticket.createdAt | Rejected | `server/tests/lab-04/action-taken.validation.test.ts` | Planned |
-| UNIT-05 | Unit | BR-09 | Attachment Notes empty → null, 501 chars rejected | As stated | `server/tests/lab-04/action-taken.validation.test.ts` | Planned |
+| UNIT-01 | Unit | AC-04 | Follow-up Note required when followUpRequired = true | Validation error on `followUpNote` | `server/tests/lab-04/action-taken.validation.test.ts` | Pass |
+| UNIT-02 | Unit | BR-08 | Follow-up Note discarded when followUpRequired = false | Stored as null | `server/tests/lab-04/action-taken.validation.test.ts` | Pass |
+| UNIT-03 | Unit | AC-05 | Description/Result trimmed; blank, 2001 chars | Rejected; 2000 accepted | `server/tests/lab-04/action-taken.validation.test.ts` | Pass |
+| UNIT-04 | Unit | AC-05 | actionAt > now + 5 min, before ticket.createdAt | Rejected | `server/tests/lab-04/action-taken.validation.test.ts` | Pass |
+| UNIT-05 | Unit | BR-09 | Attachment Notes empty → null, 501 chars rejected | As stated | `server/tests/lab-04/action-taken.validation.test.ts` | Pass |
 | UNIT-06 | Unit | AC-14 | Resolution gate evaluator: no owner / no actions / latest follow-up / satisfied | Correct `unmet` list | `server/tests/lab-04/ticket-workflow.api.test.ts` | Planned |
 | UNIT-07 | Unit | BR-25 | "Last 7 days" boundary calculation | Includes exactly 7×24h | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
 
@@ -61,36 +61,36 @@ e2e/lab-04/
 
 | Test ID | Type | Req / AC | What It Tests | Expected Result | Automated Test File | Final |
 |---|---|---|---|---|---|---|
-| API-01 | API | AC-12 | List actions for a Ticket with 3 actions | 200, ordered actionAt, id asc | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-02 | API | AC-20 | List for a legacy Ticket with 0 actions | 200, `items: []` | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-03 | API | AC-01 | Create a valid Action Taken | 201, under the correct Ticket, performedBy = session user | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-04 | API | AC-01 | Client sends `performedById` of another user | 400 unknown field; no row | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-05 | API | AC-03 | Staff B records on a Ticket owned by Staff A | 201, performedBy = B, ownerId unchanged | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-06 | API | AC-04 | followUpRequired true without note | 400 `details.followUpNote` | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-07 | API | AC-05 | Missing description/result; future actionAt | 400 with field details | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-08 | API | AC-08 | Edit with current version | 200, version + 1, updatedBy set | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-09 | API | AC-08 | Edit with stale version | 409 `ACTION_TAKEN_CHANGED`; data unchanged | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-10 | API | AC-09 | Non-performer IT Staff edits | 403 | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-11 | API | AC-09 | Administrator edits another's action | 200 | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-12 | API | AC-10 | Create/edit on CLOSED and CANCELLED Ticket | 409 `TICKET_NOT_WRITABLE` | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-13 | API | AC-11 | Repeat create with same clientRequestId | 200 original; count unchanged | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-14 | API | BR-01 | GET/PATCH action via a different ticketId | 404 `ACTION_TAKEN_NOT_FOUND` | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-15 | API | BR-11 | DELETE action | 404 (no route); row still exists | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-16 | API | BR-16 | `<script>` in description | Stored and returned as literal text | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| API-17 | API | AC-29 [D-01] | Option B only: inactive assignee rejected; Planned → Completed / Cancelled | 400 `INVALID_ASSIGNEE`; transitions OK | `server/tests/lab-04/actions-taken.api.test.ts` | Pending D-01 |
+| API-01 | API | AC-12 | List actions for a Ticket with 3 actions | 200, ordered actionAt, id asc | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-02 | API | AC-20 | List for a legacy Ticket with 0 actions | 200, `items: []` | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-03 | API | AC-01 | Create a valid Action Taken | 201, under the correct Ticket, performedBy = session user | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-04 | API | AC-01 | Client sends `performedById` of another user | 400 unknown field; no row | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-05 | API | AC-03 | Staff B records on a Ticket owned by Staff A | 201, performedBy = B, ownerId unchanged | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-06 | API | AC-04 | followUpRequired true without note | 400 `details.followUpNote` | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-07 | API | AC-05 | Missing description/result; future actionAt | 400 with field details | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-08 | API | AC-08 | Edit with current version | 200, version + 1, updatedBy set | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-09 | API | AC-08 | Edit with stale version | 409 `ACTION_TAKEN_CHANGED`; data unchanged | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-10 | API | AC-09 | Non-performer IT Staff edits | 403 | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-11 | API | AC-09 | Administrator edits another's action | 200 | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-12 | API | AC-10 | Create/edit on CLOSED and CANCELLED Ticket | 409 `TICKET_NOT_WRITABLE` | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-13 | API | AC-11 | Repeat create with same clientRequestId | 200 original; count unchanged | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-14 | API | BR-01 | GET/PATCH action via a different ticketId | 404 `ACTION_TAKEN_NOT_FOUND` | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-15 | API | BR-11 | DELETE action | 404 (no route); row still exists | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-16 | API | BR-16 | `<script>` in description | Stored and returned as literal text | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| API-17 | API | AC-29 | Inactive/non-staff assignee rejected; assignee completes Planned work; cancel locks the action; Completed cannot change status | 400 `INVALID_ASSIGNEE`; 409 for invalid transitions | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
 
 ## 6. Authorization Tests
 
 | Test ID | Type | Req / AC | What It Tests | Expected Result | Automated Test File | Final |
 |---|---|---|---|---|---|---|
-| SEC-01 | Security | AC-06 | Requester POST staff actions-taken | 403 | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| SEC-02 | Security | AC-06 | Requester PATCH staff actions-taken | 403 | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| SEC-03 | Security | AC-07 | Requester lists actions on owned Ticket | 200 read-only shape (no version/canEdit) | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| SEC-04 | Security | AC-07 | Requester lists actions on another's Ticket | 404 safe | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| SEC-05 | Security | AC-19 | Unauthenticated on every Lab 4 endpoint | 401 | `server/tests/lab-04/*.api.test.ts` | Planned |
+| SEC-01 | Security | AC-06 | Requester POST staff actions-taken | 403 | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| SEC-02 | Security | AC-06 | Requester PATCH staff actions-taken | 403 | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| SEC-03 | Security | AC-07 | Requester lists actions on owned Ticket | 200 read-only shape (no version/canEdit) | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| SEC-04 | Security | AC-07 | Requester lists actions on another's Ticket | 404 safe | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| SEC-05 | Security | AC-19 | Unauthenticated on every Lab 4 endpoint | 401 | `server/tests/lab-04/*.api.test.ts` | Pass (Actions Taken endpoints); dashboards in #59/#60 |
 | SEC-06 | Security | AC-19 | Requester → staff dashboard; IT Staff → requester dashboard | 403 | `server/tests/lab-04/*-dashboard.api.test.ts` | Planned |
-| SEC-07 | Security | BR-34 | Responses contain no passwordHash, email of other users, stack | Absent | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
-| SEC-08 | Security | Lab 3 BR-11 | User with mustChangePassword calls Lab 4 endpoints | 403 `PASSWORD_CHANGE_REQUIRED` | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| SEC-07 | Security | BR-34 | Responses contain no passwordHash, email of other users, stack | Absent | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
+| SEC-08 | Security | Lab 3 BR-11 | User with mustChangePassword calls Lab 4 endpoints | 403 `PASSWORD_CHANGE_REQUIRED` | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
 
 ## 7. Workflow Tests (#58)
 
@@ -129,16 +129,16 @@ e2e/lab-04/
 
 | Test ID | Type | Req / AC | What It Tests | Expected Result | Automated Test File | Final |
 |---|---|---|---|---|---|---|
-| MIG-01 | Migration | AC-23 | Lab 3 rows (Users, Tickets, Attachments, Comments, Notes) unchanged after migration | Counts and sample fields equal | `server/tests/lab-04/migration-seed.test.ts` | Planned |
-| MIG-02 | Migration | AC-23 | `ActionTaken` table, FKs, indexes exist | Present | `server/tests/lab-04/migration-seed.test.ts` | Planned |
-| MIG-03 | Seed | AC-24 | Run seed twice | No duplicates; required scenarios present (0/1/3+ actions, all statuses) | `server/tests/lab-04/migration-seed.test.ts` | Planned |
+| MIG-01 | Migration | AC-23 | Lab 3 rows (Users, Tickets, Attachments, Comments, Notes) unchanged after migration | Counts and sample fields equal | `server/tests/lab-04/migration-seed.test.ts` | Pass |
+| MIG-02 | Migration | AC-23 | `ActionTaken` table, FKs, indexes exist | Present | `server/tests/lab-04/migration-seed.test.ts` | Pass |
+| MIG-03 | Seed | AC-24 | Run seed twice | No duplicates; required scenarios present (0/1/3+ actions, all statuses) | `server/tests/lab-04/migration-seed.test.ts` | Pass |
 | REG-01 | Regression | AC-25 | All Lab 1 server tests | Pass | `server/tests/lab-01/*` | Planned |
 | REG-02 | Regression | AC-25 | All Lab 2 server tests | Pass | `server/tests/lab-02/*` | Planned |
 | REG-03 | Regression | AC-25 | All Lab 3 server tests (status tests updated for `expectedStatus`, D-05) | Pass | `server/tests/lab-03/*` | Planned |
 | REG-04 | Regression | AC-25 | All Lab 1–3 client tests | Pass | `client/tests/lab-0{1,2,3}/*` | Planned |
 | REG-05 | Regression | AC-25 | Lab 2 and Lab 3 Playwright suites | Pass | `e2e/lab-02/*`, `e2e/lab-03/*` | Planned |
 | PERF-01 | Perf-smoke | FR-19 | Dashboards with seed + 500 extra Tickets respond < 500 ms locally | < 500 ms | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
-| PERF-02 | Perf-smoke | BR-15 | List 50 actions on one Ticket < 300 ms | < 300 ms | `server/tests/lab-04/actions-taken.api.test.ts` | Planned |
+| PERF-02 | Perf-smoke | BR-15 | List 50 actions on one Ticket < 300 ms | < 300 ms | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
 
 ## 10. UI Component Tests
 
@@ -223,7 +223,7 @@ e2e/lab-04/
 | AC-26 | RESP-01, RESP-02, RESP-03 |
 | AC-27 | A11Y-01, A11Y-02 |
 | AC-28 | UI-04, UI-05 |
-| AC-29 | API-17 (pending D-01) |
+| AC-29 | API-17 |
 
 ## 14. Final Results (filled in Issue #61 from `main`)
 

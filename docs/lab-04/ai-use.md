@@ -19,7 +19,9 @@ The student team remained responsible for reviewing every document, confirming o
 | 2 | "Search GitHub to ensure the seven Lab 4 issues do not already exist, then create them … Before freezing the Actions Taken specification, clearly flag the ambiguity concerning assign, complete, cancel, and inactive-assignee rejection. Do not invent requirements silently." | Created issues #55–#61 without duplicates. The assignee/lifecycle conflict between handout §3/§8.3 and §14 Part 6 was recorded as open decision D-01 instead of being silently implemented. |
 | 3 | "Complete all Issue 1 documentation requirements following the specification-first workflow." | Drafted `specification.md`, `api-spec.md`, `ui-spec.md`, and `tests.md`. Cross-checking against the Lab 3 code found three doc/code mismatches (terminal statuses, error shape, queue parameter names), which were recorded as decisions D-04 and D-05 and as notes in the API spec. |
 
-(Prompts 4–10 will be added during implementation issues #56–#61.)
+| 4 | "Let's get to the new issue … just do your thing." (Issue #56, Actions Taken Foundation) | Adopted Option B for D-01 and implemented the `ActionTaken` migration, idempotent seed, staff and Requester APIs, and 49 server tests. The full server suite was run against a dedicated local test database before committing. |
+
+(Prompts 5–10 will be added during implementation issues #57–#61.)
 
 ---
 
