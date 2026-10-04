@@ -33,11 +33,11 @@ Issue: #55. This document extends `docs/lab-03/api-spec.md`. Every Lab 2 and Lab
 |---|---|
 | 200 | Read or update succeeded |
 | 201 | Action Taken created |
-| 400 | Invalid input (`VALIDATION_ERROR`) |
+| 400 | Invalid input (`VALIDATION_ERROR`, `INVALID_ASSIGNEE`) |
 | 401 | Not authenticated (`UNAUTHENTICATED`) |
 | 403 | Authenticated but not permitted (`FORBIDDEN`, `PASSWORD_CHANGE_REQUIRED`) |
 | 404 | Not found or safely unavailable (`TICKET_NOT_FOUND`, `ACTION_TAKEN_NOT_FOUND`) |
-| 409 | Conflict (`ACTION_TAKEN_CHANGED`, `TICKET_CHANGED`, `TICKET_NOT_WRITABLE`, `INVALID_STATUS_TRANSITION`, `RESOLUTION_GATE_NOT_MET`) |
+| 409 | Conflict (`ACTION_TAKEN_CHANGED`, `ACTION_TAKEN_LOCKED`, `INVALID_ACTION_STATUS_TRANSITION`, `TICKET_CHANGED`, `TICKET_NOT_WRITABLE`, `INVALID_STATUS_TRANSITION`, `RESOLUTION_GATE_NOT_MET`) |
 | 500 | Safe unexpected failure (`INTERNAL_ERROR`) |
 
 ---
@@ -48,13 +48,16 @@ Issue: #55. This document extends `docs/lab-03/api-spec.md`. Every Lab 2 and Lab
 {
   "id": 42,
   "ticketId": 7,
+  "status": "COMPLETED",
   "actionAt": "2026-10-05T03:15:00.000Z",
+  "completedAt": "2026-10-05T03:16:02.000Z",
   "description": "Replaced the laptop battery.",
   "result": "Laptop holds charge for 6 hours.",
   "followUpRequired": true,
   "followUpNote": "Check battery health again next week.",
   "attachmentNotes": "See battery-report.pdf in Ticket Attachments.",
   "performedBy": { "id": 12, "name": "Somchai IT", "role": "IT_STAFF" },
+  "assignee": { "id": 12, "name": "Somchai IT", "role": "IT_STAFF" },
   "updatedBy": null,
   "version": 1,
   "createdAt": "2026-10-05T03:16:02.000Z",
@@ -63,22 +66,24 @@ Issue: #55. This document extends `docs/lab-03/api-spec.md`. Every Lab 2 and Lab
 }
 ```
 
-- `performedBy` and `updatedBy` expose only `id`, `name`, and `role`. Email, password, and session data are never included.
-- `canEdit` is computed by the backend for the current user (BR-10). It is a UI hint only; the backend re-checks it on every edit.
+- `performedBy`, `assignee` and `updatedBy` expose only `id`, `name`, and `role`. Email, password, and session data are never included.
+- `canEdit` is computed by the backend for the current user: performer, assignee or Administrator, the action is not Cancelled, and the Ticket is not Closed or Cancelled (BR-10, BR-14, BR-36). It is a UI hint only; the backend re-checks it on every edit.
 - The Requester representation omits `canEdit`, `version`, and `updatedBy`.
-- **[D-01] Option B only:** adds `assignee { id, name, role } | null`, `status` (`PLANNED` | `COMPLETED` | `CANCELLED`), and `completedAt`.
+- `status` is `PLANNED`, `COMPLETED` or `CANCELLED` (decision D-01). `completedAt` is set by the backend when the action becomes Completed.
 
 ### 2.1 Validation
 
 | Field | Rule | Error detail key |
 |---|---|---|
-| `actionAt` | required ISO date-time; ≤ now + 5 min; ≥ ticket.createdAt | `actionAt` |
+| `status` | optional on create: `PLANNED` or `COMPLETED` (default). On edit: only `PLANNED` → `COMPLETED` / `CANCELLED` | `status` |
+| `actionAt` | required ISO date-time; ≥ ticket.createdAt; ≤ now + 5 min when Completed, ≤ now + 1 year when Planned | `actionAt` |
 | `description` | required string, trimmed 1–2000 | `description` |
-| `result` | required string, trimmed 1–2000 | `result` |
+| `result` | required when Completed (trimmed 1–2000); optional while Planned | `result` |
 | `followUpRequired` | required boolean | `followUpRequired` |
 | `followUpNote` | required, trimmed 1–1000, if `followUpRequired` is true; otherwise ignored and stored as `null` | `followUpNote` |
 | `attachmentNotes` | optional string, trimmed ≤ 500; empty becomes `null` | `attachmentNotes` |
-| `clientRequestId` | optional UUID string (create only) | `clientRequestId` |
+| `assigneeId` | optional active IT Staff/Administrator user ID; defaults to the recorder on create; otherwise 400 `INVALID_ASSIGNEE` | `assigneeId` |
+| `clientRequestId` | optional, 8–64 letters, digits, `-` or `_` (a UUID is recommended); create only | `clientRequestId` |
 | `version` | required positive integer (edit only) | `version` |
 | `performedById`, `ticketId`, `id`, `createdAt` in body | rejected as unknown fields | n/a |
 
@@ -124,6 +129,8 @@ POST /api/staff/tickets/:ticketId/actions-taken
   "followUpRequired": false,
   "followUpNote": null,
   "attachmentNotes": "",
+  "status": "COMPLETED",
+  "assigneeId": 12,
   "clientRequestId": "6c0e1a8e-0b8e-4d3c-9b0e-1f0c2a7d4e11"
 }
 ```
@@ -135,6 +142,8 @@ POST /api/staff/tickets/:ticketId/actions-taken
 | Validation failure | 400 `VALIDATION_ERROR` with `details` |
 | Ticket missing | 404 `TICKET_NOT_FOUND` |
 | Ticket `CLOSED` / `CANCELLED` | 409 `TICKET_NOT_WRITABLE` |
+| Inactive or non-staff assignee | 400 `INVALID_ASSIGNEE` |
+| `status: CANCELLED` on create | 400 `VALIDATION_ERROR` |
 | Requester | 403 `FORBIDDEN` |
 
 Creating an action also updates `Ticket.updatedAt`, so dashboards and the queue reflect recent work.
@@ -157,18 +166,21 @@ PATCH /api/staff/tickets/:ticketId/actions-taken/:actionId
 }
 ```
 
-`version` is required. The editable fields are the same as for create, and at least one must be present.
+`version` is required. The editable fields are the same as for create except `clientRequestId`, and at least one must be present. The request is merged with the stored values before validation, so cross-field rules (Follow-up Note, Result when Completed) apply to the final state. To complete a Planned action send `{ "version": n, "status": "COMPLETED", "result": "…" }`; to cancel it send `{ "version": n, "status": "CANCELLED" }`.
 
 | Result | Response |
 |---|---|
 | Updated | 200 + `ActionTaken` with `version` + 1 and `updatedBy` = session user |
-| Not performer and not Administrator | 403 `FORBIDDEN` |
+| Not performer, assignee or Administrator | 403 `FORBIDDEN` |
+| Action is Cancelled | 409 `ACTION_TAKEN_LOCKED` |
+| Status change other than Planned → Completed / Cancelled | 409 `INVALID_ACTION_STATUS_TRANSITION` |
+| Inactive or non-staff assignee | 400 `INVALID_ASSIGNEE` |
 | Stale `version` | 409 `ACTION_TAKEN_CHANGED`, "This Action Taken was changed by another user. Reload and try again." |
 | Ticket `CLOSED` / `CANCELLED` | 409 `TICKET_NOT_WRITABLE` |
 | Validation failure | 400 `VALIDATION_ERROR` |
 | Action missing or on another Ticket | 404 `ACTION_TAKEN_NOT_FOUND` |
 
-Implementation: `updateMany({ where: { id, ticketId, version }, data: { …, version: { increment: 1 } } })`. If the count is 0, re-read the action to tell 404 from 409.
+Implementation: the version is checked first, then `updateMany({ where: { id, ticketId, version }, data: { …, version: { increment: 1 } } })` runs in the same transaction. A count of 0 means another edit won the race and returns 409 `ACTION_TAKEN_CHANGED`.
 
 ### 3.5 No delete
 
@@ -211,7 +223,7 @@ Role: IT Staff or Administrator.
 }
 ```
 
-`unmet` codes: `NO_OWNER`, `NO_ACTIONS_TAKEN`, `LATEST_ACTION_NEEDS_FOLLOW_UP`, and with **[D-01] Option B** also `PLANNED_ACTIONS_REMAIN`.
+`unmet` codes: `NO_OWNER`, `NO_ACTIONS_TAKEN` (no Completed action), `LATEST_ACTION_NEEDS_FOLLOW_UP`, `PLANNED_ACTIONS_REMAIN`.
 
 `allowedNextStatuses` lists every matrix transition (BR-19), including `RESOLVED` when the gate is unmet, so the UI can show it disabled with the reason.
 

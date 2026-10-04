@@ -10,11 +10,7 @@ Related documents:
 - `docs/lab-04/ui-spec.md`: screen behavior, states, responsive and accessibility rules
 - `docs/lab-04/tests.md`: test plan and traceability
 
-> **Contract status: DRAFT, pending one open decision (D-01).**
-> The handout is inconsistent about whether an Action Taken has an assignee and a lifecycle status.
-> Section 11.1 describes the conflict and the two options.
-> Requirements marked **[D-01]** become binding only after the decision is recorded.
-> All other requirements are proposed as binding once this PR is approved.
+> **Contract status: approved (PR #62).** Decision D-01 was resolved in Issue #56: Option B (assignee and Planned/Completed/Cancelled lifecycle) is adopted. See section 11.1.
 
 ---
 
@@ -96,7 +92,7 @@ Lab 3 requirements FR-01 to FR-62 remain in force unless modified below. Lab 4 n
 
 **FR-07** A Requester shall be able to view all Actions Taken of a Ticket they own, read-only.
 
-**FR-08** **[D-01]** If Option B in section 11.1 is approved, the system shall also support assigning an Action Taken to an eligible active IT Staff/Administrator user. It shall support the lifecycle Planned → Completed / Cancelled, and shall reject an inactive or ineligible assignee.
+**FR-08** An IT Staff user or Administrator shall be able to assign an Action Taken to an eligible active IT Staff/Administrator user, record it as Planned or Completed, and later complete or cancel a Planned action. The backend shall reject an inactive or ineligible assignee.
 
 ### 4.2 Ticket Workflow
 
@@ -164,9 +160,9 @@ Lab 3 rules BR-01 to BR-96 remain in force unless amended below. Lab 4 numbering
 
 ### 5.2 Actions Taken: Field Validation
 
-**BR-06** Action Description and Result are required. They are trimmed, and each must be 1–2000 characters after trimming.
+**BR-06** Action Description is required. Result is required when the action is Completed and optional while it is Planned. Both are trimmed and limited to 2000 characters.
 
-**BR-07** Action Date/Time is required and is stored in UTC. It must not be more than 5 minutes in the future (to allow for clock skew) and must not be earlier than the Ticket's creation time.
+**BR-07** Action Date/Time is required and is stored in UTC. It must not be earlier than the Ticket's creation time. For Completed work it must not be more than 5 minutes in the future (clock skew); for Planned work it may be up to one year ahead.
 
 **BR-08** When Follow-Up Required is true, Follow-up Note is required (1–1000 characters after trimming). When it is false, Follow-up Note is stored as `null` and any submitted value is discarded.
 
@@ -174,7 +170,7 @@ Lab 3 rules BR-01 to BR-96 remain in force unless amended below. Lab 4 numbering
 
 ### 5.3 Actions Taken: Editing and Audit
 
-**BR-10** An Action Taken may be edited only by its performer or by an Administrator.
+**BR-10** An Action Taken may be edited only by its performer, its current assignee, or an Administrator.
 
 **BR-11** Actions Taken cannot be deleted. Corrections are made by editing. `createdAt`, `updatedAt` and `updatedById` (the user who last edited) are always kept.
 
@@ -187,6 +183,16 @@ Lab 3 rules BR-01 to BR-96 remain in force unless amended below. Lab 4 numbering
 **BR-15** Actions Taken are listed ordered by `actionAt` ascending, then `id` ascending.
 
 **BR-16** Action Taken text is rendered as plain text, never as HTML.
+
+### 5.3a Actions Taken: Assignee and Lifecycle (D-01)
+
+**BR-35** An Action Taken has a status: `PLANNED`, `COMPLETED` (default) or `CANCELLED`. A new action may be created as Planned or Completed, never as Cancelled.
+
+**BR-36** Only a Planned action may change status, to Completed or Cancelled. Completed and Cancelled are final. A Cancelled action is read-only (409 `ACTION_TAKEN_LOCKED`); an invalid status change returns 409 `INVALID_ACTION_STATUS_TRANSITION`.
+
+**BR-37** `completedAt` is set by the backend when an action is created as, or changed to, Completed.
+
+**BR-38** The assignee must be an active `IT_STAFF` or `ADMINISTRATOR` user. It defaults to the user recording the action. An inactive or ineligible assignee returns 400 `INVALID_ASSIGNEE`. Changing the assignee does not change Performed By.
 
 ### 5.4 Ticket Status Transition Matrix (final)
 
@@ -211,10 +217,9 @@ Lab 3 rules BR-01 to BR-96 remain in force unless amended below. Lab 4 numbering
 
 **BR-20 Resolution gate.** A transition to `RESOLVED` is permitted only when all of the following hold:
 1. the Ticket has a Ticket Owner;
-2. the Ticket has at least one Action Taken; and
-3. the most recent Action Taken (by BR-15 order) has Follow-Up Required = false.
-
-**[D-01]** If Option B is approved, there is a fourth condition: no Action Taken may remain in status `PLANNED`.
+2. the Ticket has at least one Completed Action Taken;
+3. the most recent Completed Action Taken (by BR-15 order) has Follow-Up Required = false; and
+4. no Action Taken remains Planned.
 
 A failed gate returns 409 `RESOLUTION_GATE_NOT_MET` with the unmet conditions listed.
 
@@ -277,7 +282,7 @@ A failed gate returns 409 `RESOLUTION_GATE_NOT_MET` with the unmet conditions li
 |---|---|---|---|
 | List Actions Taken | Own Tickets only (read-only) | Yes | Yes |
 | Create Action Taken | No (403) | Yes | Yes |
-| Edit Action Taken | No (403) | Own actions only | Any action |
+| Edit Action Taken | No (403) | Actions they recorded or are assigned | Any action |
 | Delete Action Taken | No | No | No |
 | Change Ticket status (with gate) | No (403) | Yes | Yes |
 | Requester Dashboard API | Yes (own data) | No (403) | No (403) |
@@ -313,9 +318,12 @@ Full detail: `docs/lab-04/ui-spec.md`.
 | `ticketId` | Int FK → Ticket.id | required, `onDelete: Restrict` |
 | `performedById` | Int FK → User.id | required, set by backend, `onDelete: Restrict` |
 | `updatedById` | Int? FK → User.id | last editor, null until first edit |
+| `assigneeId` | Int? FK → User.id | BR-38, defaults to the recorder |
+| `status` | enum `ActionTakenStatus` | `PLANNED`, `COMPLETED` (default), `CANCELLED`, BR-35 |
+| `completedAt` | DateTime? | BR-37 |
 | `actionAt` | DateTime (timestamptz) | required, BR-07 |
 | `description` | VarChar(2000) | required, BR-06 |
-| `result` | VarChar(2000) | required, BR-06 |
+| `result` | VarChar(2000)? | required when Completed, BR-06 |
 | `followUpRequired` | Boolean | default `false` |
 | `followUpNote` | VarChar(1000)? | BR-08 |
 | `attachmentNotes` | VarChar(500)? | BR-09 |
@@ -324,21 +332,21 @@ Full detail: `docs/lab-04/ui-spec.md`.
 | `createdAt` | DateTime | default now |
 | `updatedAt` | DateTime | `@updatedAt` |
 
-**[D-01] Option B adds:**
-- `assigneeId` (Int? FK → User), must be an active IT Staff or Administrator user;
-- `status`: new enum `ActionTakenStatus { PLANNED, COMPLETED, CANCELLED }`, default `COMPLETED`;
-- `completedAt` (DateTime?).
+Database CHECK constraints repeat the key rules as a second line of defence: a Follow-up Note must exist when follow-up is required, a Completed action must have a Result, and `version >= 1`.
 
 Indexes:
 
 - `@@index([ticketId, actionAt, id])`: the ordered list query and the "latest action" lookup for the gate.
 - `@@index([performedById, actionAt])`: the `myActionsLast7Days` metric.
+- `@@index([ticketId, status])`: the "no Planned actions" gate check.
+- `@@index([assigneeId, status])`: work assigned to a staff member.
 - `@@unique([ticketId, clientRequestId])`: idempotent create. PostgreSQL allows multiple `NULL`s.
 
 Relations:
 
 - `Ticket.actionsTaken ActionTaken[]`
 - `User.actionsPerformed ActionTaken[] @relation("ActionPerformer")`
+- `User.actionsAssigned ActionTaken[] @relation("ActionAssignee")`
 - `User.actionsUpdated ActionTaken[] @relation("ActionUpdater")`
 
 ### 8.2 Database-design decisions
@@ -353,14 +361,14 @@ Relations:
 
 ### 8.3 Migration and backfill
 
-- Migration name: `<timestamp>_lab4_actions_taken`.
-- It creates only the `ActionTaken` table, its indexes, and its foreign keys. No existing table is altered, so no backfill is needed.
+- Migration: `server/prisma/migrations/20261004093253_lab4_actions_taken`.
+- It creates only the `ActionTakenStatus` enum and the `ActionTaken` table with its indexes, foreign keys and CHECK constraints. No existing table is altered, so no backfill is needed.
 - **Legacy Tickets** have zero Actions Taken. They remain fully viewable and editable. A legacy Ticket that is already `RESOLVED` or `CLOSED` stays as it is: the gate only applies to new transitions *into* `RESOLVED`. To resolve a legacy Ticket that is not yet resolved, staff must first record an Action Taken.
-- **Rollback / recovery.** The migration is additive, so rollback is a documented down-script (`DROP TABLE "ActionTaken"`), run only on a disposable database. In normal recovery, you restore the `pg_dump` taken before `prisma migrate deploy`. The test `migration-preservation` (Lab 4 version) checks that every Lab 2/3 row is unchanged after migration.
+- **Rollback / recovery.** The migration is additive, so rollback is the documented down-script `server/prisma/rollback/lab4_actions_taken.down.sql`, run only on a disposable database. In normal recovery, you restore the `pg_dump` taken before `prisma migrate deploy`. `server/tests/lab-04/migration-seed.test.ts` checks that the migration contains no destructive statements and that all Lab 1–3 tables remain.
 
 ### 8.4 Seed decisions
 
-The seed is extended in the existing `server/prisma/seed.ts` and stays idempotent. It uses upserts keyed on `Ticket.clientSubmissionId` and `ActionTaken (ticketId, clientRequestId)`. It adds:
+The seed is extended through `server/prisma/seed-lab4.ts`, called from `server/prisma/seed.ts`, and stays idempotent (existing rows are never modified). It uses lookups keyed on `Ticket.clientSubmissionId` and `ActionTaken (ticketId, clientRequestId)`. It adds:
 
 - at least one Ticket in each of the 8 statuses;
 - every IT Priority, plus assigned and unassigned Tickets;
@@ -421,13 +429,13 @@ Full detail: `docs/lab-04/api-spec.md`. The error shape follows the implemented 
 | AC-26 | Given desktop (1280), tablet (768), and mobile (375) widths, then the dashboards and Actions Taken show no horizontal page scroll, clipping, or overlap. |
 | AC-27 | Given keyboard-only use, then every dashboard drill-down and Actions Taken control can be reached and operated, with visible focus. |
 | AC-28 | Given a save in progress, then the submit control is disabled, and after a recoverable failure the entered values remain. |
-| AC-29 | **[D-01]** If Option B is approved: assigning an Action Taken to an inactive or non-staff user returns 400 `INVALID_ASSIGNEE`, and Planned → Completed / Cancelled transitions work as documented. |
+| AC-29 | Given an inactive or non-staff assignee, then 400 `INVALID_ASSIGNEE` is returned. A Planned action can be completed (with a Result) or cancelled; Completed and Cancelled actions cannot change status, and Cancelled actions cannot be edited. |
 
 ---
 
 ## 11. Assumptions and Decisions
 
-### 11.1 D-01: OPEN, Action Taken assignee and lifecycle (needs confirmation)
+### 11.1 D-01: Action Taken assignee and lifecycle (resolved: Option B)
 
 **Conflict in the handout.**
 
@@ -439,11 +447,11 @@ Full detail: `docs/lab-04/api-spec.md`. The error shape follows the implemented 
 
 **Option B: field list plus planning.** Add `assigneeId` (eligible active staff, inactive rejected), `status` PLANNED/COMPLETED/CANCELLED, and `completedAt`. Performed By remains the creator. Planned actions block resolution (BR-20 condition 4). Estimated cost: about 150 extra lines and about 8 extra tests.
 
-**Proposal.** Ask the TA/instructor before Issue #56 starts. Until then, Issue #56 implements Option A, and the schema reserves the Option B fields so they can be added in an additive migration. **Nothing in Option B will be implemented without a recorded answer.**
+**Decision (Issue #56, 2026-10-04).** The team adopted **Option B**. It keeps every field in §3/§8.3 unchanged and adds only what the Part 6 grading requires (assign, complete, cancel, inactive-assignee rejection), so both parts of the handout are satisfied. Rules: BR-35 to BR-38, and BR-20 conditions 2–4.
 
 ### 11.2 Other decisions
 
-- **D-02.** Follow-Up Required on the **latest** action blocks resolution. This is how "IT Staff must review the work" is made enforceable. Earlier follow-up flags are treated as handled by later actions.
+- **D-02.** Follow-Up Required on the **latest Completed** action blocks resolution. This is how "IT Staff must review the work" is made enforceable. Earlier follow-up flags are treated as handled by later actions.
 - **D-03.** Administrators get the IT Staff Ticket Queue and Detail in the UI. Handout §4.3 says Administrators "perform IT Staff behavior", and the backend already allows it since Lab 3. This replaces Lab 3's "No by default" UI rule.
 - **D-04.** The final transition matrix keeps the Lab 3 *implemented* `CLOSED → REOPENED` and `CANCELLED → REOPENED`. The Lab 3 documents (terminal states) are corrected rather than the code, so released behavior is not removed. The reviewer should confirm.
 - **D-05.** Status changes now require `expectedStatus` (handout §6.1). The Lab 3 status endpoint accepted only `{ status }`; the Lab 4 client always sends both. Requests without `expectedStatus` return 400, and the Lab 3 tests are updated accordingly.

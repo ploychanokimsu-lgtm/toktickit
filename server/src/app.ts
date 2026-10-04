@@ -2,6 +2,10 @@ import { requesterCompletionRouter } from "./requester-completion.js";
 import { adminUsersRouter } from "./admin-users.js";
 import { staffQueueRouter } from "./staff-queue.js";
 import { staffTicketOperationsRouter } from "./staff-ticket-operations.js";
+import {
+  requesterActionsTakenRouter,
+  staffActionsTakenRouter,
+} from "./actions-taken.js";
 
 import cors from "cors";
 import express, {
@@ -465,9 +469,18 @@ app.use(
   "/api/staff/tickets",
   staffTicketOperationsRouter
 );
+// Lab 4 Actions Taken
+app.use(
+  "/api/staff/tickets",
+  staffActionsTakenRouter
+);
 app.use(
   "/api/tickets",
   requesterCompletionRouter
+);
+app.use(
+  "/api/tickets",
+  requesterActionsTakenRouter
 );
 app.use("/api", (req, res, next) => {
   if (req.path === "/health") {

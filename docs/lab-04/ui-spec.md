@@ -143,7 +143,7 @@ A new section "Actions Taken" sits after Ticket information and the status/owner
 
 A read-only "Actions Taken" section with the same fields (no version or editor info) and no buttons. Empty state: "IT Staff have not recorded any actions yet."
 
-### 5.6 [D-01] Option B additions (only if approved)
+### 5.6 Assignee and lifecycle (decision D-01)
 
 - An Assignee select listing active IT Staff and Administrators, and a status badge (Planned / Completed / Cancelled).
 - "Mark Completed" and "Cancel Action" buttons, with confirmation for cancel.

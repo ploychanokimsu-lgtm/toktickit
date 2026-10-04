@@ -1,5 +1,6 @@
 import { PrismaClient, type UserRole } from "@prisma/client";
 import bcrypt from "bcrypt";
+import { seedLab4 } from "./seed-lab4.js";
 
 const prisma = new PrismaClient();
 
@@ -222,6 +223,12 @@ async function main() {
   console.log("Lab 3 users seeded successfully.");
 
   // ------------------------------------------------------------
+  // Lab 4 Tickets and Actions Taken
+  // ------------------------------------------------------------
+
+  await seedLab4(prisma);
+
+  // ------------------------------------------------------------
   // Verification
   // ------------------------------------------------------------
 
@@ -261,7 +268,7 @@ async function main() {
   console.log(`Active IT Staff: ${staffCount}`);
   console.log(`Active Administrators: ${adminCount}`);
 
-  console.log("Lab 3 seed completed.");
+  console.log("Lab 4 seed completed.");
 }
 
 main()

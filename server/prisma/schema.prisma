@@ -1,4 +1,4 @@
-// TokTickIT Lab 3 Database Schema
+// TokTickIT Lab 4 Database Schema
 // Preserve Lab 2 Requester IDs, Tickets and Attachments.
 
 generator client {
@@ -34,6 +34,12 @@ enum TicketStatus {
   RESOLVED
   CLOSED
   REOPENED
+  CANCELLED
+}
+
+enum ActionTakenStatus {
+  PLANNED
+  COMPLETED
   CANCELLED
 }
 
@@ -90,6 +96,10 @@ model User {
   sessions       Session[]
   publicComments PublicComment[]
   internalNotes  InternalNote[]
+
+  actionsPerformed ActionTaken[] @relation("ActionPerformer")
+  actionsAssigned  ActionTaken[] @relation("ActionAssignee")
+  actionsUpdated   ActionTaken[] @relation("ActionUpdater")
 
   @@index([role])
   @@index([isActive])
@@ -153,6 +163,7 @@ model Ticket {
   attachments    Attachment[]
   publicComments PublicComment[]
   internalNotes  InternalNote[]
+  actionsTaken   ActionTaken[]
 
   @@index([requesterId])
   @@index([requesterId, updatedAt])
@@ -226,4 +237,47 @@ model InternalNote {
 
   @@index([ticketId, createdAt])
   @@index([authorId])
+}
+
+// ============================================================
+// ACTIONS TAKEN - LAB 4
+// ============================================================
+
+model ActionTaken {
+  id       Int @id @default(autoincrement())
+  ticketId Int
+
+  // Performed by (auto): the authenticated user who recorded the action.
+  performedById Int
+  assigneeId    Int?
+  updatedById   Int?
+
+  status      ActionTakenStatus @default(COMPLETED)
+  actionAt    DateTime
+  completedAt DateTime?
+
+  description      String  @db.VarChar(2000)
+  result           String? @db.VarChar(2000)
+  followUpRequired Boolean @default(false)
+  followUpNote     String? @db.VarChar(1000)
+  attachmentNotes  String? @db.VarChar(500)
+
+  // Idempotent create and optimistic concurrency.
+  clientRequestId String? @db.VarChar(64)
+  version         Int     @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+
+  performedBy User  @relation("ActionPerformer", fields: [performedById], references: [id], onDelete: Restrict)
+  assignee    User? @relation("ActionAssignee", fields: [assigneeId], references: [id], onDelete: Restrict)
+  updatedBy   User? @relation("ActionUpdater", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@unique([ticketId, clientRequestId])
+  @@index([ticketId, actionAt, id])
+  @@index([ticketId, status])
+  @@index([performedById, actionAt])
+  @@index([assigneeId, status])
 }
