@@ -88,8 +88,8 @@ e2e/lab-04/
 | SEC-02 | Security | AC-06 | Requester PATCH staff actions-taken | 403 | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
 | SEC-03 | Security | AC-07 | Requester lists actions on owned Ticket | 200 read-only shape (no version/canEdit) | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
 | SEC-04 | Security | AC-07 | Requester lists actions on another's Ticket | 404 safe | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
-| SEC-05 | Security | AC-19 | Unauthenticated on every Lab 4 endpoint | 401 | `server/tests/lab-04/*.api.test.ts` | Pass (Actions Taken endpoints); dashboards in #59/#60 |
-| SEC-06 | Security | AC-19 | Requester → staff dashboard; IT Staff → requester dashboard | 403 | `server/tests/lab-04/*-dashboard.api.test.ts` | Planned |
+| SEC-05 | Security | AC-19 | Unauthenticated on every Lab 4 endpoint | 401 | `server/tests/lab-04/*.api.test.ts` | Pass (Actions Taken, workflow, Requester dashboard); staff dashboard in #60 |
+| SEC-06 | Security | AC-19 | Requester → staff dashboard; IT Staff → requester dashboard | 403 | `server/tests/lab-04/*-dashboard.api.test.ts` | Pass (Requester dashboard); staff dashboard in #60 |
 | SEC-07 | Security | BR-34 | Responses contain no passwordHash, email of other users, stack | Absent | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
 | SEC-08 | Security | Lab 3 BR-11 | User with mustChangePassword calls Lab 4 endpoints | 403 `PASSWORD_CHANGE_REQUIRED` | `server/tests/lab-04/actions-taken.api.test.ts` | Pass |
 
@@ -115,11 +115,11 @@ e2e/lab-04/
 
 | Test ID | Type | Req / AC | What It Tests | Expected Result | Automated Test File | Final |
 |---|---|---|---|---|---|---|
-| DASH-01 | API | AC-02 | Requester metrics count only own Tickets | Counts equal `prisma.ticket.count({requesterId})` per BR-27 | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
-| DASH-02 | API | AC-02 | Recent lists exclude other Requesters' Tickets | No foreign IDs | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
-| DASH-03 | API | AC-20 | Requester with no Tickets | All 0, lists [] | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
-| DASH-04 | API | AC-21 | Requester drill-down queries | Match BR-27 table | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
-| DASH-05 | API | FR-21 | My Tickets `?status=` single, list, invalid | Filtered; 400 on invalid | `server/tests/lab-04/requester-dashboard.api.test.ts` | Planned |
+| DASH-01 | API | AC-02 | Requester metrics count only own Tickets | Counts equal `prisma.ticket.count({requesterId})` per BR-27 | `server/tests/lab-04/requester-dashboard.api.test.ts` | Pass |
+| DASH-02 | API | AC-02 | Recent lists exclude other Requesters' Tickets | No foreign IDs | `server/tests/lab-04/requester-dashboard.api.test.ts` | Pass |
+| DASH-03 | API | AC-20 | Requester with no Tickets | All 0, lists [] | `server/tests/lab-04/requester-dashboard.api.test.ts` | Pass |
+| DASH-04 | API | AC-21 | Requester drill-down queries | Match BR-27 table | `server/tests/lab-04/requester-dashboard.api.test.ts` | Pass |
+| DASH-05 | API | FR-21 | My Tickets `?status=` single, list, invalid | Filtered; 400 on invalid | `server/tests/lab-04/requester-dashboard.api.test.ts` | Pass |
 | DASH-06 | API | AC-18 | Staff counts equal direct Prisma queries (unassigned, myAssigned, byStatus×8, byItPriority×3, myActions7d) | Equal | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
 | DASH-07 | API | AC-18 | `myAssigned` / `myActions` differ per signed-in staff | Session-specific | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
 | DASH-08 | API | BR-28 | Urgent = active HIGH, oldest first, ≤5 | Correct order/limit | `server/tests/lab-04/staff-dashboard.api.test.ts` | Planned |
@@ -158,10 +158,10 @@ e2e/lab-04/
 | UI-10 | Component | AC-14 | Resolved disabled with reason messages | Reasons shown | `client/tests/lab-04/TicketWorkflow.test.tsx` | Pass |
 | UI-11 | Component | AC-15 | Success refreshes header status | New badge | `client/tests/lab-04/TicketWorkflow.test.tsx` | Pass |
 | UI-12 | Component | AC-16 | 409 TICKET_CHANGED shows reload message | Shown | `client/tests/lab-04/TicketWorkflow.test.tsx` | Pass |
-| UI-13 | Component | AC-02 | Requester dashboard cards and lists render | Values and links | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
-| UI-14 | Component | AC-20 | Requester dashboard zeros and empty lists | 0 and empty text | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
-| UI-15 | Component | FR-26 | Requester dashboard loading / error / retry | States shown | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
-| UI-16 | Component | AC-21 | Requester "View all" links carry status filter | Correct href/route | `client/tests/lab-04/RequesterDashboard.test.tsx` | Planned |
+| UI-13 | Component | AC-02 | Requester dashboard cards and lists render | Values and links | `client/tests/lab-04/RequesterDashboard.test.tsx` | Pass |
+| UI-14 | Component | AC-20 | Requester dashboard zeros and empty lists | 0 and empty text | `client/tests/lab-04/RequesterDashboard.test.tsx` | Pass |
+| UI-15 | Component | FR-26 | Requester dashboard loading / error / retry | States shown | `client/tests/lab-04/RequesterDashboard.test.tsx` | Pass |
+| UI-16 | Component | AC-21 | Requester "View all" links carry status filter | Correct href/route | `client/tests/lab-04/RequesterDashboard.test.tsx` | Pass |
 | UI-17 | Component | AC-18 | Staff dashboard cards, chips, urgent/recent lists | Rendered | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
 | UI-18 | Component | AC-22 | Admin sees Users by Role; staff does not | As stated | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
 | UI-19 | Component | FR-26 | Staff dashboard loading / empty / 403 / error / Refresh | States shown | `client/tests/lab-04/StaffDashboard.test.tsx` | Planned |
@@ -175,7 +175,7 @@ e2e/lab-04/
 | STY-02 | UI style | V8 | Status/follow-up badges include text | Text present | `client/tests/lab-04/ui-style.test.tsx` | Planned |
 | A11Y-01 | Accessibility | AC-27 | Form controls labelled; errors linked via aria-describedby | Pass | `client/tests/lab-04/ActionsTaken.test.tsx` | Pass |
 | A11Y-02 | Accessibility | AC-27 | Keyboard: Tab reaches all drill-downs and action controls; Enter activates | Pass | `e2e/lab-04/dashboards.spec.ts` | Planned |
-| RESP-01 | Responsive | AC-26 | Requester dashboard at 1280/768/375: no horizontal overflow | scrollWidth ≤ innerWidth | `e2e/lab-04/dashboards.spec.ts` | Planned |
+| RESP-01 | Responsive | AC-26 | Requester dashboard at 1280/768/375: no horizontal overflow | scrollWidth ≤ innerWidth | `e2e/lab-04/dashboards.spec.ts` | Pass |
 | RESP-02 | Responsive | AC-26 | Staff dashboard at 1280/768/375 | No overflow | `e2e/lab-04/dashboards.spec.ts` | Planned |
 | RESP-03 | Responsive | AC-26 | Actions Taken list/form at 1280/768/375 | No overflow, stacked cards on mobile | `e2e/lab-04/actions-taken-flow.spec.ts` | Pass |
 
@@ -187,7 +187,7 @@ e2e/lab-04/
 | E2E-02 | E2E | AC-07 | Requester signs in and sees actions read-only | Pass | `e2e/lab-04/actions-taken-flow.spec.ts` | Pass |
 | E2E-03 | E2E | AC-14, AC-15 | Lifecycle: New → In Progress → Resolve blocked → add action → Resolved → Closed | Pass | `e2e/lab-04/ticket-resolution.spec.ts` | Pass |
 | E2E-04 | E2E | AC-13 | Cancel path: New → Cancelled; actions read-only | Pass | `e2e/lab-04/ticket-resolution.spec.ts` | Pass |
-| E2E-05 | E2E | AC-02, AC-21 | Requester dashboard drill-down to filtered My Tickets and Ticket Detail | Pass | `e2e/lab-04/dashboards.spec.ts` | Planned |
+| E2E-05 | E2E | AC-02, AC-21 | Requester dashboard drill-down to filtered My Tickets and Ticket Detail | Pass | `e2e/lab-04/dashboards.spec.ts` | Pass |
 | E2E-06 | E2E | AC-18, AC-21 | Staff dashboard drill-down to filtered queue and Ticket Detail | Pass | `e2e/lab-04/dashboards.spec.ts` | Planned |
 | E2E-07 | E2E | AC-22 | Admin dashboard, Ticket Queue, User Management reachable | Pass | `e2e/lab-04/dashboards.spec.ts` | Planned |
 

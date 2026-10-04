@@ -25,7 +25,9 @@ The student team remained responsible for reviewing every document, confirming o
 
 | 6 | "Done merge and start next." (Issue #58, Ticket Workflow and Resolution Gate) | Moved the transition matrix into a shared module, added the resolution gate and `expectedStatus` stale-update check in one transaction, added the workflow endpoint and status control with a confirmation dialog, and updated the Lab 3 tests that relied on the old request shape. |
 
-(Prompts 7–10 will be added during implementation issues #59–#61.)
+| 7 | "Review is done merge and start next one." (Issue #59, Requester Dashboard) | Added the Requester dashboard API and screen with drill-down into a new My Tickets status filter. Screenshot review found two earlier-lab UI defects affecting the dashboard evidence: unreadable navigation and a fixed "New" status badge in My Tickets. Both were fixed. |
+
+(Prompts 8–10 will be added during implementation issues #60–#61.)
 
 ---
 
