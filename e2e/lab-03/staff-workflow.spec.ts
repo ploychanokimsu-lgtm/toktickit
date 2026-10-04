@@ -333,6 +333,22 @@ test(
         newStatus
       );
 
+      // Lab 4: Closed and Cancelled ask for confirmation first.
+      const confirmDialog =
+        page.getByRole("dialog");
+
+      if (
+        await confirmDialog
+          .isVisible()
+          .catch(() => false)
+      ) {
+        await confirmDialog
+          .getByRole("button", {
+            name: /^Yes,/,
+          })
+          .click();
+      }
+
       const statusResponse =
         await statusResponsePromise;
 

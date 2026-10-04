@@ -225,7 +225,7 @@ Role: IT Staff or Administrator.
 
 `unmet` codes: `NO_OWNER`, `NO_ACTIONS_TAKEN` (no Completed action), `LATEST_ACTION_NEEDS_FOLLOW_UP`, `PLANNED_ACTIONS_REMAIN`.
 
-`allowedNextStatuses` lists every matrix transition (BR-19), including `RESOLVED` when the gate is unmet, so the UI can show it disabled with the reason.
+`allowedNextStatuses` lists every matrix transition (BR-19), including `RESOLVED` when the gate is unmet, so the UI can show it disabled with the reason. Requesters receive 403.
 
 ### 5.2 Change status (amended)
 
@@ -237,7 +237,7 @@ PATCH /api/staff/tickets/:ticketId/status
 { "status": "RESOLVED", "expectedStatus": "IN_PROGRESS" }
 ```
 
-Both fields are required (decision D-05).
+Both fields are required and no other fields are accepted (decision D-05); otherwise 400 `VALIDATION_ERROR`. The matrix and gate live in `server/src/ticket-workflow.ts`.
 
 | Result | Response |
 |---|---|

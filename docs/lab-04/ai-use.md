@@ -23,7 +23,9 @@ The student team remained responsible for reviewing every document, confirming o
 
 | 5 | "Review merged, start #57." (Actions Taken UI) | Built the Actions Taken list, create, view and edit UI for staff and the read-only Requester view, with 15 component tests and 2 E2E tests. The E2E run found a real bug (an action recorded in the same minute as Ticket creation was rejected), which was fixed in the backend rule. |
 
-(Prompts 6–10 will be added during implementation issues #58–#61.)
+| 6 | "Done merge and start next." (Issue #58, Ticket Workflow and Resolution Gate) | Moved the transition matrix into a shared module, added the resolution gate and `expectedStatus` stale-update check in one transaction, added the workflow endpoint and status control with a confirmation dialog, and updated the Lab 3 tests that relied on the old request shape. |
+
+(Prompts 7–10 will be added during implementation issues #59–#61.)
 
 ---
 

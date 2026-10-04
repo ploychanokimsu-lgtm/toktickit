@@ -165,6 +165,28 @@ beforeEach(() => {
         });
       }
 
+      // Lab 4: permitted statuses come from the workflow endpoint.
+      if (
+        url ===
+          "/api/staff/tickets/42/workflow" &&
+        method === "GET"
+      ) {
+        const next: Record<string, string[]> = {
+          NEW: ["OPEN", "IN_PROGRESS", "CANCELLED"],
+          OPEN: ["IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"],
+        };
+
+        return response({
+          currentStatus: ticket.currentStatus,
+          allowedNextStatuses: next[ticket.currentStatus] ?? [],
+          resolutionGate: {
+            satisfied: false,
+            unmet: ["NO_ACTIONS_TAKEN"],
+          },
+          requesterResolutionIndicatedAt: null,
+        });
+      }
+
       if (
         url ===
           "/api/staff/tickets/42/status" &&
@@ -172,6 +194,11 @@ beforeEach(() => {
       ) {
         const body = JSON.parse(
           String(options.body)
+        );
+
+        // Lab 4 D-05: the client sends the status it last saw.
+        expect(body.expectedStatus).toBe(
+          ticket.currentStatus
         );
 
         ticket.currentStatus = body.status;
