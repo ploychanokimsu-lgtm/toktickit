@@ -1,5 +1,8 @@
+import { formatDateTime } from "./format.js";
 import RequesterDashboard from "./RequesterDashboard.js";
-import TicketStatusBadge from "./components/TicketStatusBadge.js";
+import TicketStatusBadge, {
+  formatStatusLabel,
+} from "./components/TicketStatusBadge.js";
 import {
   type FormEvent,
   useCallback,
@@ -77,7 +80,7 @@ function createSubmissionId(): string {
 }
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleString();
+  return formatDateTime(value);
 }
 
 // ============================================================
@@ -417,9 +420,7 @@ function CreateTicketScreen({
                   </div>
 
                   <p className="tk-help-text">
-                    Populated from the
-                    selected Development
-                    Requester.
+                    Filled in from the current Requester account.
                   </p>
                 </div>
               </div>
@@ -1564,9 +1565,9 @@ function MyTicketsScreen({
                                         : "tk-badge-medium"
                                   }`}
                                 >
-                                  {
+                                  {formatStatusLabel(
                                     ticket.requestedPriority
-                                  }
+                                  )}
                                 </span>
                               </td>
 
@@ -1653,9 +1654,9 @@ function MyTicketsScreen({
                                       : "tk-badge-medium"
                                 }`}
                               >
-                                {
+                                {formatStatusLabel(
                                   ticket.requestedPriority
-                                }
+                                )}
                               </span>
 
                               <TicketStatusBadge

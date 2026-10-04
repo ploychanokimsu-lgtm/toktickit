@@ -207,19 +207,26 @@ A read-only "Actions Taken" section with the same fields (no version or editor i
 
 ## 10. Visual and Accessibility Checklist (completed in Issue #61)
 
-| # | Check | Requester Dashboard | Staff Dashboard | Actions Taken | Workflow |
-|---|---|---|---|---|---|
-| V1 | Zen Green tokens, cards, badges, buttons consistent with Lab 2/3 | ☐ | ☐ | ☐ | ☐ |
-| V2 | Editable vs read-only fields visually distinct | n/a | n/a | ☐ | ☐ |
-| V3 | Validation messages placed under fields + summary | n/a | n/a | ☐ | ☐ |
-| V4 | Visible keyboard focus on every control | ☐ | ☐ | ☐ | ☐ |
-| V5 | No clipping at 375/768/1280 | ☐ | ☐ | ☐ | ☐ |
-| V6 | No overlapping controls | ☐ | ☐ | ☐ | ☐ |
-| V7 | No horizontal page overflow | ☐ | ☐ | ☐ | ☐ |
-| V8 | Non-color status cues | ☐ | ☐ | ☐ | ☐ |
-| V9 | Loading / empty / error states present | ☐ | ☐ | ☐ | ☐ |
-| V10 | No placeholder text, console errors, or dead links | ☐ | ☐ | ☐ | ☐ |
+✔ = checked on the desktop, tablet and mobile screenshots in `artifacts/lab-04/screenshots/` and by the listed tests.
 
+| # | Check | Requester Dashboard | Staff Dashboard | Actions Taken | Workflow | Evidence |
+|---|---|---|---|---|---|---|
+| V1 | Zen Green tokens, cards, badges, buttons consistent with Lab 2/3 | ✔ | ✔ | ✔ | ✔ | STY-01; screenshots |
+| V2 | Editable vs read-only fields visually distinct | n/a | n/a | ✔ | ✔ | Performed by shown read-only; Closed Tickets show a read-only note |
+| V3 | Validation messages placed under fields + summary | n/a | n/a | ✔ | ✔ | UI-03, UI-05, A11Y-01; `create-validation.png` |
+| V4 | Visible keyboard focus on every control | ✔ | ✔ | ✔ | ✔ | A11Y-02; focus-visible outlines in `styles.css` |
+| V5 | No clipping at 375/768/1280 | ✔ | ✔ | ✔ | ✔ | Screenshots at all three widths |
+| V6 | No overlapping controls | ✔ | ✔ | ✔ | ✔ | Screenshots at all three widths |
+| V7 | No horizontal page overflow | ✔ | ✔ | ✔ | ✔ | RESP-01, RESP-02, RESP-03, E2E-03 |
+| V8 | Non-color status cues | ✔ | ✔ | ✔ | ✔ | STY-02; "Needs your reply", "Needs an owner", "Follow-up needed", underlined active nav |
+| V9 | Loading / empty / error states present | ✔ | ✔ | ✔ | ✔ | UI-02, UI-14, UI-15, UI-19, workflow Retry test |
+| V10 | No placeholder text, console errors, or dead links | ✔ | ✔ | ✔ | ✔ | REG-05 and A11Y-02 fail on any console error; leftover "Development Requester" text removed |
+
+Additional consistency fixes made during the final review:
+
+- One date/time format everywhere, e.g. "4 Oct 2026, 18:53" in Asia/Bangkok time (`client/src/format.ts`).
+- Priority badges show "High", "Medium" or "Low" instead of raw values.
+- The undefined `--tk-muted` CSS variable was replaced with `--tk-text-muted`.
 ---
 
 ## 11. Screenshot Evidence Plan
